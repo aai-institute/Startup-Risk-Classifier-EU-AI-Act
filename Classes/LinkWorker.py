@@ -1,5 +1,5 @@
 from Classes.Selenium import Selenium
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlunparse, urljoin
@@ -70,13 +70,23 @@ class LinkWorker(Selenium):
 
         potential_cookie_elems = self.find_elements_by_xpath("//button") + self.find_elements_by_xpath("//a")
         for element in potential_cookie_elems:
-            potential_cookie_word = element.text.strip()
-            # Compare only in lowercase
-            if potential_cookie_word.lower() in [x.lower() for x in cookie_button_labels]:
-                element.click()
-                print(f"Cookie acceptor found and clicked: {potential_cookie_word}")
-                time.sleep(1)
-                return True
+            try:
+                potential_cookie_word = element.text.strip()
+                # Compare only in lowercase
+                if potential_cookie_word.lower() in [x.lower() for x in cookie_button_labels]:
+                    element.click()
+                    print(f"Cookie acceptor found and clicked: {potential_cookie_word}")
+                    time.sleep(1)
+                    return True
+            except StaleElementReferenceException:
+                print("StaleElementReferenceException encountered. Retrying...")
+                continue  # Retry by checking the next element
+            except NoSuchElementException:
+                print("NoSuchElementException: Element may have been removed.")
+                continue
+            except Exception as e:
+                print(f"An unexpected exception occurred: {e}")
+                continue
         
         print("Cookie acceptor not found")
         return False
@@ -91,9 +101,6 @@ class LinkWorker(Selenium):
             netloc = netloc[4:]
 
         return netloc
-
-    def quit_driver(self):
-        self.__driver.quit()
 
     def count_tokens(self, text, model_name):
         encoding = tiktoken.encoding_for_model(model_name)

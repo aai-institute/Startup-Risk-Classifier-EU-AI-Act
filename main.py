@@ -24,7 +24,7 @@ def main():
     output_sheet.title = "AI Use Cases"
 
     # sheet.max_row + 1
-    for row in range(4, 5):
+    for row in range(7, 12):
         url = sheet.cell(row=row, column=4).value
         startup_name = sheet.cell(row=row, column=2).value
 
@@ -43,7 +43,7 @@ def main():
 
         # Use chat model to get relavant links
         chat_links_obj = ChatGPT(model_name, prompts_obj.get_important_links(page_links), [], OpenAI(api_key=os.getenv("MY_KEY")))
-        chat_links_response, chat_links_context, input_tokens, output_tokens = chat_links_obj.chat_model()
+        chat_links_response, input_tokens, output_tokens = chat_links_obj.chat_model()
         chat_links_response = extract_list(chat_links_response)
 
         # Update token count
@@ -54,7 +54,7 @@ def main():
 
         # Use chat model to get the use cases
         chat_use_cases_obj = ChatGPT(model_name, prompts_obj.startup_summary(startup_name, page_content), [], OpenAI(api_key=os.getenv("MY_KEY")))
-        chat_use_cases_response, chat_use_cases_context, input_tokens, output_tokens = chat_use_cases_obj.chat_model()
+        chat_use_cases_response, input_tokens, output_tokens = chat_use_cases_obj.chat_model()
         # print(f"AI Use Cases: {chat_use_cases_response}")
         ai_use_cases.append(chat_use_cases_response)
 
@@ -68,7 +68,7 @@ def main():
         
         # Prompt based approach for the EU AI Act
         eu_ai_act_obj = ChatGPT(model_name, prompts_obj.eu_ai_act_prompt(all_ai_use_cases), [], OpenAI(api_key=os.getenv("MY_KEY")))
-        eu_ai_act_response, eu_ai_act_context, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
+        eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
         print(f"EU AI Act Response: {eu_ai_act_response}")
         # Update token count
         web_scraper_obj.increase_input_tokens(input_tokens)
@@ -78,7 +78,8 @@ def main():
         save_to_excel(output_sheet, output_wb, startup_name, web_scraper_obj, chat_links_response, all_ai_use_cases, eu_ai_act_response)
 
         print(f"Finished processing startup: {startup_name}")
-        time.sleep(100)
+        web_scraper_obj.quit_driver()
+        # time.sleep(100)
 
 
 
@@ -92,7 +93,7 @@ def traverse_links(web_scraper_obj, links, model_name, ai_use_cases, prompts_obj
         print(f"Page Content from relavant link: {page_content}")
 
         chat_use_case_obj = ChatGPT(model_name, prompts_obj.update_startup_summary(f"\n\n".join(ai_use_cases), page_content), [], OpenAI(api_key=os.getenv("MY_KEY")))
-        chat_use_case_response, chat_use_case_context, input_tokens, output_tokens = chat_use_case_obj.chat_model()
+        chat_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
 
         # Update token count
         web_scraper_obj.increase_input_tokens(input_tokens)

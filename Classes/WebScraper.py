@@ -15,6 +15,9 @@ class WebScraper(LinkWorker):
     def get_total_output_tokens(self):
         return self.__total_output_tokens
 
+    def quit_driver(self):
+        self.__driver.quit()
+
     def get_url(self):
         return self.__url
     
