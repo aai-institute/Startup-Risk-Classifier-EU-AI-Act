@@ -1,4 +1,7 @@
 custom-env/
 .env
-main.ipynb
+*.ipynb
 *.xlsx
+*.csv
+datasets/
+__pycache__/

@@ -5,6 +5,9 @@ class ChatGPT():
         self.__context = context
         self.__client = client
         print(f"ChatGPT class initialized with model {self.__model_name}")
+
+    def set_prompt(self, prompt):
+        self.__prompt = prompt
     
     def chat_model(self):
         self.__context.append({"role": "user", "content": self.__prompt})
@@ -26,3 +29,14 @@ class ChatGPT():
         except Exception as e:
             print(f"API Error: {e}")
             return [None, None]
+
+
+    def embedding_model(self):
+        response = self.__client.embeddings.create(
+            model=self.__model_name,
+            input=self.__prompt
+        )
+        # total_tokens = response.usage.total_tokens
+
+        return response.data[0].embedding
+

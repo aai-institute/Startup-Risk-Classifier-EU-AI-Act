@@ -1,7 +1,6 @@
-from Classes import ChatGPT, Prompts, WebScraper
+from Classes import ChatGPT, Prompts, WebScraper, Embeddings
 
 from openai import OpenAI
-import time
 import re
 import ast
 import openpyxl
@@ -12,9 +11,7 @@ load_dotenv()
 
 TOTAL_USE_CASES = 4
 
-# prompt and completion tokens are available in the response output - May use them instead
-
-def main():
+def prompt_approach():
     sheet = openpyxl.load_workbook("raw-dealroom.xlsx")["Sheet1"]
     model_name = "chatgpt-4o-latest"
     
@@ -42,7 +39,7 @@ def main():
 
 
         # Use chat model to get relavant links
-        chat_links_obj = ChatGPT(model_name, prompts_obj.get_important_links(page_links), [], OpenAI(api_key=os.getenv("MY_KEY")))
+        chat_links_obj = ChatGPT(model_name, prompts_obj.get_important_links(page_links), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
         chat_links_response, input_tokens, output_tokens = chat_links_obj.chat_model()
         chat_links_response = extract_list(chat_links_response)
 
@@ -53,7 +50,7 @@ def main():
         print(f"Important Links: {chat_links_response}")
 
         # Use chat model to get the use cases
-        chat_use_cases_obj = ChatGPT(model_name, prompts_obj.startup_summary(startup_name, page_content), [], OpenAI(api_key=os.getenv("MY_KEY")))
+        chat_use_cases_obj = ChatGPT(model_name, prompts_obj.startup_summary(startup_name, page_content), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
         chat_use_cases_response, input_tokens, output_tokens = chat_use_cases_obj.chat_model()
         # print(f"AI Use Cases: {chat_use_cases_response}")
         ai_use_cases.append(chat_use_cases_response)
@@ -67,7 +64,7 @@ def main():
         all_ai_use_cases = traverse_links(web_scraper_obj, chat_links_response, model_name, ai_use_cases, prompts_obj)
         
         # Prompt based approach for the EU AI Act
-        eu_ai_act_obj = ChatGPT(model_name, prompts_obj.eu_ai_act_prompt(all_ai_use_cases), [], OpenAI(api_key=os.getenv("MY_KEY")))
+        eu_ai_act_obj = ChatGPT(model_name, prompts_obj.eu_ai_act_prompt(all_ai_use_cases), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
         eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
         print(f"EU AI Act Response: {eu_ai_act_response}")
         # Update token count
@@ -81,8 +78,6 @@ def main():
         web_scraper_obj.quit_driver()
         # time.sleep(100)
 
-
-
 def traverse_links(web_scraper_obj, links, model_name, ai_use_cases, prompts_obj):
     # Traverse the important links
     for link in links:
@@ -92,7 +87,7 @@ def traverse_links(web_scraper_obj, links, model_name, ai_use_cases, prompts_obj
         page_content = web_scraper_obj.get_page_content(model_name)
         print(f"Page Content from relavant link: {page_content}")
 
-        chat_use_case_obj = ChatGPT(model_name, prompts_obj.update_startup_summary(f"\n\n".join(ai_use_cases), page_content), [], OpenAI(api_key=os.getenv("MY_KEY")))
+        chat_use_case_obj = ChatGPT(model_name, prompts_obj.update_startup_summary(f"\n\n".join(ai_use_cases), page_content), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
         chat_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
 
         # Update token count
@@ -112,7 +107,6 @@ def extract_list(input_string):
         # Convert the matched string to a Python list
         return ast.literal_eval(match.group())
     return None
-
 
 def save_to_excel(output_sheet, output_wb, startup_name, web_scraper_obj, additional_urls, all_ai_use_cases, eu_ai_act_response):
     headers = ["Startup Name", "Homepage URL", "Additional URLs"] + [f"AI Use Case {i+1}" for i in range(TOTAL_USE_CASES)] + ["EU AI Act Risk Classification"] + ["Total Input Tokens", "Total Output Tokens"]
@@ -134,5 +128,7 @@ def save_to_excel(output_sheet, output_wb, startup_name, web_scraper_obj, additi
 
 
 
+
 if __name__ == "__main__":
-    main()
+    # prompt_approach()
+    pass
