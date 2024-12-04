@@ -21,7 +21,7 @@ def prompt_approach():
     output_sheet.title = "AI Use Cases"
 
     # sheet.max_row + 1
-    for row in range(7, 12):
+    for row in range(4, 6):
         url = sheet.cell(row=row, column=4).value
         startup_name = sheet.cell(row=row, column=2).value
 
@@ -130,5 +130,5 @@ def save_to_excel(output_sheet, output_wb, startup_name, web_scraper_obj, additi
 
 
 if __name__ == "__main__":
-    # prompt_approach()
-    pass
+    prompt_approach()
+    # pass
