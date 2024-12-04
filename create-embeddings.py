@@ -17,10 +17,10 @@ def create_embeddings(input_csv, embedding_model_name, embedding_encoding, max_t
     embeddings_dataframe = embeddings_object.get_embeddings(input_dataframe)
 
     # save the embeddings
-    embeddings_dataframe.to_csv("datasets/reviews_with_embeddings_1k.csv", index=False)
+    embeddings_dataframe.to_csv("datasets/ai_act_with_embeddings.csv", index=False)
 
 def main():
-    input_csv = "datasets/reviews_small.csv"
+    input_csv = "datasets/ai_act.csv"
     embedding_model_name = "text-embedding-3-small"
     embedding_encoding = "cl100k_base"
     max_tokens = 8000 # the maximum for text-embedding-3-small is 8191
