@@ -7,9 +7,7 @@ class Embeddings():
         self.__embedding_encoding = embedding_encoding
         self.__max_tokens = max_tokens
     
-    @staticmethod
-    def cosine_similarity(a, b):
-        return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
 
 
     def __generate_embedding(self, text):

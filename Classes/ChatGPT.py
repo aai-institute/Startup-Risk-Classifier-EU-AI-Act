@@ -32,6 +32,8 @@ class ChatGPT():
 
 
     def embedding_model(self):
+        self.__prompt = self.__prompt.replace("\n", " ")
+        
         response = self.__client.embeddings.create(
             model=self.__model_name,
             input=self.__prompt

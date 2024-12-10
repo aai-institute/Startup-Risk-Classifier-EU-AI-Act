@@ -1,9 +1,14 @@
-from Classes import ChatGPT, Prompts, WebScraper, Embeddings
+from Classes import ChatGPT, Prompts, WebScraper, TextExtractor, Embeddings
+
+# ai act : 2-16: prohibited, 17-28: high risk, 29-30: limited risk, 31-32: minimal risk
 
 from openai import OpenAI
 import re
 import ast
 import openpyxl
+import pandas as pd
+import numpy as np
+from ast import literal_eval
 
 import os
 from dotenv import load_dotenv
@@ -21,7 +26,7 @@ def prompt_approach():
     output_sheet.title = "AI Use Cases"
 
     # sheet.max_row + 1
-    for row in range(4, 6):
+    for row in range(12, 21):
         url = sheet.cell(row=row, column=4).value
         startup_name = sheet.cell(row=row, column=2).value
 
@@ -129,6 +134,104 @@ def save_to_excel(output_sheet, output_wb, startup_name, web_scraper_obj, additi
 
 
 
+
+
+
+def create_embeddings(input_csv, output_path, embedding_model_name, embedding_encoding, max_tokens):
+    # Create the ChatGPT object (embedding model general function is inside ChatGPT class)
+    embedding_object = ChatGPT(embedding_model_name, "", [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+    
+    # get the embeddings
+    input_dataframe = pd.read_csv(input_csv)
+    embeddings_object = Embeddings(embedding_object, embedding_encoding, max_tokens)
+    embeddings_dataframe = embeddings_object.get_embeddings(input_dataframe)
+
+    # save the embeddings
+    embeddings_dataframe.to_csv(output_path, index=False)
+    print(f"Embeddings saved to {output_path}")
+
+
+def extract_use_cases_from_response(use_cases_full_text):
+    all_use_cases = []
+    # Extract each AI use case from the full text
+    text_extractor = TextExtractor(use_cases_full_text)
+    text_extractor.set_use_cases()
+    df_use_cases = text_extractor.get_use_cases()
+    
+    for index, row in df_use_cases.iterrows():
+        row_string = "\n".join(f"{col}: {val}" for col, val in row.items())
+        all_use_cases.append(row_string + '\n\n')
+    
+    return all_use_cases    
+
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+
+
+
+def get_similarity(df_existing_embeddings, embedding_model_name, ai_use_case, n=3):
+    # Get the embeddings for the AI use case
+    embedding_object = ChatGPT(embedding_model_name, ai_use_case, [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+    use_case_embeddings = embedding_object.embedding_model()
+
+    # Compute similarities
+    df_existing_embeddings["similarity"] = df_existing_embeddings.embedding.apply(
+        lambda x: cosine_similarity(x, use_case_embeddings)
+    )
+
+    # Get top results
+    results = df_existing_embeddings.sort_values("similarity", ascending=False).head(n)
+
+    # Extract the Text column from the matched rows
+    matched_texts = results['Text'].tolist()
+    return matched_texts
+
+
+
+
+def second_step_similarity():
+    # Calculate similarity between the AI use cases and the AI Act text
+    df = pd.read_excel("ai_use_cases.xlsx")
+    # Get the last non-empty generated AI use case
+    target_columns = ['AI Use Case 1', 'AI Use Case 2', 'AI Use Case 3', 'AI Use Case 4']
+    ai_use_cases = df[target_columns].apply(lambda row: row.dropna().iloc[-1] if not row.dropna().empty else None, axis=1).to_numpy()
+
+    # Extract the AI use cases from the full text
+    all_use_cases = []
+    for use_case in ai_use_cases:
+        if use_case:
+            all_use_cases.extend(extract_use_cases_from_response(use_case))
+
+    # Load the embeddings for the AI Act text
+    df_existing_embeddings = pd.read_csv("datasets/ai_act_with_embeddings.csv")
+    df_existing_embeddings["embedding"] = df_existing_embeddings.embedding.apply(literal_eval).apply(np.array)
+
+
+    df_similarities = pd.DataFrame(columns=['AI Use Case', 'Similarity'])
+    similarity_rows = []
+    # Get the similarity between the AI use case and the AI Act text
+    for use_case in all_use_cases:
+        specific_clause = get_similarity(df_existing_embeddings, "text-embedding-3-small", use_case, n=3)
+        similarity_rows.append({"AI Use Case": use_case, "Similarity": specific_clause})
+
+    df_similarities = pd.concat([df_similarities, pd.DataFrame(similarity_rows)], ignore_index=True)
+    df_similarities.to_csv("similarity_results.csv", index=False)
+
+
 if __name__ == "__main__":
     prompt_approach()
+
+    # Create embeddings for the AI Act text
+    # create_embeddings("datasets/ai_act.csv", "datasets/ai_act_with_embeddings.csv", "text-embedding-3-small", "cl100k_base", 8000)
+
+    # second_step_similarity()
+
     # pass
+
+
+
+
+
+
