@@ -26,7 +26,7 @@ def prompt_approach():
     output_sheet.title = "AI Use Cases"
 
     # sheet.max_row + 1
-    for row in range(12, 21):
+    for row in range(15, 31):
         url = sheet.cell(row=row, column=4).value
         startup_name = sheet.cell(row=row, column=2).value
 
@@ -67,9 +67,9 @@ def prompt_approach():
         # Update the startup use cases with the important links
         # Also return the updated token count
         all_ai_use_cases = traverse_links(web_scraper_obj, chat_links_response, model_name, ai_use_cases, prompts_obj)
-        
+
         # Prompt based approach for the EU AI Act
-        eu_ai_act_obj = ChatGPT(model_name, prompts_obj.eu_ai_act_prompt(all_ai_use_cases), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+        eu_ai_act_obj = ChatGPT("o1-preview", prompts_obj.eu_ai_act_prompt(all_ai_use_cases), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
         eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
         print(f"EU AI Act Response: {eu_ai_act_response}")
         # Update token count

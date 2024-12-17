@@ -154,4 +154,6 @@ Do not give any intros or outros. The following are the AI Use cases of the star
 {all_use_cases}
         """
         print(eu_ai_act)
+        # eu_ai_act_without_prompt = f"For each of the following AI use cases, classify them according to the EU AI Act. Format you answer in this way:\n\nAI Use Case:\nContextual Considerations:\nRisk Classification:\nReason:\n\n{all_use_cases}"
+        # print(eu_ai_act_without_prompt)
         return eu_ai_act
