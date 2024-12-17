@@ -3,17 +3,22 @@ from Classes.LinkWorker import LinkWorker
 class WebScraper(LinkWorker):
     def __init__(self, url):
         self.__driver, self.__url = super().__init__(url)
-        self.__total_input_tokens = 0
-        self.__total_output_tokens = 0
-        
-    def increase_input_tokens(self, tokens):
-        self.__total_input_tokens += tokens
-    def increase_output_tokens(self, tokens):
-        self.__total_output_tokens += tokens
-    def get_total_input_tokens(self):
-        return self.__total_input_tokens
-    def get_total_output_tokens(self):
-        return self.__total_output_tokens
+        self.__total_token_cost = 0
+
+    def set_token_cost(self, input_tokens, output_tokens, model_name):
+        if model_name == "chatgpt-4o-latest":
+            input_cost = (input_tokens / 1000) * 0.005
+            output_cost = (output_tokens / 1000) * 0.015
+            self.__total_token_cost += input_cost + output_cost
+        elif model_name == "o1-preview":
+            input_cost = (input_tokens / 1000) * 0.015
+            output_cost = (output_tokens / 1000) * 0.06
+            self.__total_token_cost += input_cost + output_cost
+        else:
+            raise ValueError("Model name not recognized. Token cost not calculated.")
+    
+    def get_token_cost(self):
+        return self.__total_token_cost
 
     def quit_driver(self):
         self.__driver.quit()
