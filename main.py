@@ -1,4 +1,4 @@
-from Classes import ChatGPT, Prompts, WebScraper, TextExtractor, Embeddings
+from Classes import ChatGPT, Prompts, WebScraper, TextExtractor
 
 from openai import OpenAI
 import re
@@ -24,7 +24,7 @@ def prompt_approach():
     # web_scraper_obj = None
 
     # sheet.max_row + 1
-    for row in range(1, 3):
+    for row in range(2, 4):
         url = sheet.cell(row=row, column=4).value
         startup_name = sheet.cell(row=row, column=2).value
 
