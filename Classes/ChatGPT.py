@@ -29,16 +29,3 @@ class ChatGPT():
         except Exception as e:
             print(f"API Error: {e}")
             return [None, None]
-
-
-    def embedding_model(self):
-        self.__prompt = self.__prompt.replace("\n", " ")
-        
-        response = self.__client.embeddings.create(
-            model=self.__model_name,
-            input=self.__prompt
-        )
-        # total_tokens = response.usage.total_tokens
-
-        return response.data[0].embedding
-
