@@ -5,3 +5,4 @@ custom-env/
 *.csv
 datasets/
 __pycache__/
+Previous Results/
