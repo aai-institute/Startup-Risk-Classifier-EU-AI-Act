@@ -12,7 +12,7 @@ load_dotenv()
 TOTAL_USE_CASES = 4
 
 def prompt_approach():
-    sheet = openpyxl.load_workbook("raw-dealroom.xlsx")["Sheet1"]
+    sheet = openpyxl.load_workbook("left_over.xlsx")["Sheet1"]
     model_name = "chatgpt-4o-latest"
     classification_model_name = "chatgpt-4o-latest"
     
@@ -24,9 +24,9 @@ def prompt_approach():
     # web_scraper_obj = None
 
     # sheet.max_row + 1
-    for row in range(2, 4):
-        url = sheet.cell(row=row, column=4).value
-        startup_name = sheet.cell(row=row, column=2).value
+    for row in range(2, 77):
+        url = sheet.cell(row=row, column=2).value
+        startup_name = sheet.cell(row=row, column=1).value
 
         # Initialize the objects
         web_scraper_obj = WebScraper(url)

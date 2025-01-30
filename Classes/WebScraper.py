@@ -40,7 +40,7 @@ class WebScraper(LinkWorker):
         self.open_url()
         self.cookie_acceptor()
         self.page_scroller()
-        self.set_body_innerHTML()
+        self.set_html_innerHTML()
 
     def get_page_content(self, model_name):
         page_content = self.scrape_page_content(model_name)

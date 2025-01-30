@@ -1,5 +1,5 @@
 from Classes.Selenium import Selenium
-from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, WebDriverException
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urlunparse, urljoin
@@ -111,15 +111,31 @@ class LinkWorker(Selenium):
         # Clean the text: Remove extra spaces and newlines
         return re.sub(r'\s+', ' ', text).strip()
 
-    # Retreive the innerHTML of the body tag, do not clean it
-    def set_body_innerHTML(self):
-        body_element = self.__driver.find_element(By.TAG_NAME, "body")
+    # Retreive the innerHTML of the html tag, do not clean it
+    def set_html_innerHTML(self):
+        body_element = self.__driver.find_element(By.TAG_NAME, "html")
         self.__body_html = body_element.get_attribute("innerHTML")
 
     # Parse the HTML content into text
     def get_body_text(self):
         soup = BeautifulSoup(self.__body_html, "html.parser")
         all_text = soup.get_text(separator=" ")
+        
+        # Combine <iframe> and <frame> handling
+        iframe_text = ""
+        frames = self.__driver.find_elements(By.TAG_NAME, "iframe") + self.__driver.find_elements(By.TAG_NAME, "frame")
+        for frame in frames:
+            try:
+                self.__driver.switch_to.frame(frame)  # Switch to the frame/iframe
+                frame_soup = BeautifulSoup(self.__driver.page_source, "html.parser")
+                iframe_text += frame_soup.get_text(separator=" ")
+                self.__driver.switch_to.default_content()  # Switch back to the main content
+            except WebDriverException:
+                # Skip if the frame/iframe is restricted or inaccessible
+                continue
+        
+        # Combine the main content and iframe/frame content
+        all_text += "\n\n" + iframe_text
         return self.clean_text(all_text)
 
     def scrape_page_content(self, model_name):
