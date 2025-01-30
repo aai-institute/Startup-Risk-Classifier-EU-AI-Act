@@ -1,8 +1,12 @@
 from Classes.LinkWorker import LinkWorker
+from selenium.common.exceptions import TimeoutException
+
+import time
+
 
 class WebScraper(LinkWorker):
-    def __init__(self, url):
-        self.__driver, self.__url = super().__init__(url)
+    def __init__(self):
+        self.__driver = super().__init__()
         self.__total_token_cost = 0
 
     def set_token_cost(self, input_tokens, output_tokens, model_name):
@@ -28,11 +32,15 @@ class WebScraper(LinkWorker):
     
     def set_url(self, url):
         self.__url = self.clean_url(url)
+        print(f"Original URL: {url}. Cleaned URL: {self.__url}")
 
     def open_url(self):
         try:
+            self.__driver.set_page_load_timeout(15)  # Set the timeout to 15 seconds
             self.__driver.get(self.__url)
-            # print(f"URL {self.__url} opened successfully")
+        except TimeoutException:
+            print(f"Page load timeout: {self.__url}. Stopping page load.")
+            self.__driver.execute_script("window.stop();")  # Stop the loading
         except Exception as e:
             print(f"Error opening URL {self.__url}. Reason: {e}. Function: goto_url")
 
@@ -47,5 +55,5 @@ class WebScraper(LinkWorker):
         return page_content
     
     def get_page_links(self):
-        page_links = self.scrape_page_links()
+        page_links = self.scrape_page_links(self.__url)
         return page_links

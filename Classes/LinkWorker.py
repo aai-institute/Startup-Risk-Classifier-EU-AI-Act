@@ -6,19 +6,20 @@ from urllib.parse import urlparse, urlunparse, urljoin
 import time
 import re
 import tiktoken
+from openpyxl.utils.escape import escape
 
 
 class LinkWorker(Selenium):
     MAX_TIME_SECONDS = 10
 
-    def __init__(self, url):
+    def __init__(self):
         self.__driver = super().__init__()
         self.__body_html = ""
         
         # Rebuild the URL (keep path as-is, drop query and fragment)
-        self.__url = self.clean_url(url)
+        # self.__url = self.clean_url(url)
 
-        return self.__driver, self.__url
+        return self.__driver
 
     def clean_url(self, url):
         # set the right protocol
@@ -66,7 +67,7 @@ class LinkWorker(Selenium):
     def cookie_acceptor(self):
         # cookie_button_labels = ["Accept", "Agree", "Got it", "Continue", "OK", "I Accept", "I Agree", "Allow", "Accept Cookies", "Yes, I Agree", "Akzeptieren", "Einverstanden", "Zustimmen", "Fortfahren", "Alle auswählen", "Alle akzeptieren", "Alles akzeptieren", "Zustimmen und weiter"]
 
-        cookie_button_labels = ["Accept", "Agree", "Got it", "Continue", "OK", "I Accept", "I Agree", "Allow", "Accept Cookies", "Yes, I Agree", "Akzeptieren", "Einverstanden", "Zustimmen", "Fortfahren", "Ablehnen", "Alle auswählen", "auswählen", "Alle akzeptieren", "Alles akzeptieren", "Alle ablehnen", "Zustimmen und weiter", "Alle zulassen"]
+        cookie_button_labels = ["Accept", "Accept All", "Agree", "Got it", "Continue", "OK", "I Accept", "I Agree", "Allow", "Accept Cookies", "Yes, I Agree", "Akzeptieren", "Einverstanden", "Zustimmen", "Fortfahren", "Ablehnen", "Alle auswählen", "auswählen", "Alle akzeptieren", "Alles akzeptieren", "Alle ablehnen", "Zustimmen und weiter", "Alle zulassen"]
 
         potential_cookie_elems = self.find_elements_by_xpath("//button") + self.find_elements_by_xpath("//a")
         for element in potential_cookie_elems:
@@ -91,9 +92,9 @@ class LinkWorker(Selenium):
         print("Cookie acceptor not found")
         return False
         
-    def get_base_domain(self):
+    def get_base_domain(self, cleaned_url):
         # Extract the netloc (Remove the port number, if any)
-        parsed_url = urlparse(self.__url)
+        parsed_url = urlparse(cleaned_url)
         netloc = parsed_url.netloc.split(":")[0] 
         
         # Remove 'www.' if present
@@ -146,27 +147,30 @@ class LinkWorker(Selenium):
         body_length = len(all_text)
         print(f"Page character length: {body_length}")
         tokens = self.count_tokens(all_text, model_name)
-
+            
         while tokens > 8000:
-            print(f"Token count: {tokens}. Text too long. Truncating 100 letters.")
-            all_text = all_text[:-100]
+            print(f"Token count: {tokens}. Text too long. Truncating 1000 letters.")
+            all_text = all_text[:-1000]
             tokens = self.count_tokens(all_text, model_name)
         
         print(f"Token count in raw page: {tokens}")
 
+        # Remove illegal characters that would not save in Excel
+        all_text = escape(all_text)
+
         return all_text
     
-    def scrape_page_links(self):
+    def scrape_page_links(self, cleaned_url):
         soup = BeautifulSoup(self.__body_html, "html.parser")
         links = soup.find_all("a", href=True)
 
         same_domain_links = []
         for link in links:
-            full_link = self.clean_url(urljoin(self.__url, link['href']))  # Resolve relative URL and clean
+            full_link = self.clean_url(urljoin(cleaned_url, link['href']))  # Resolve relative URL and clean
             parsed_link = urlparse(full_link)
 
             # Check if the link is from the same domain, not already in the list and not the current URL
-            if self.get_base_domain() == parsed_link.netloc and full_link not in same_domain_links and full_link != self.__url:
+            if self.get_base_domain(cleaned_url) == parsed_link.netloc and full_link not in same_domain_links and full_link != cleaned_url:
                 same_domain_links.append(full_link)
             
             if len(same_domain_links) > 80:

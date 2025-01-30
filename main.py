@@ -11,16 +11,20 @@ load_dotenv()
 
 TOTAL_USE_CASES = 4
 
-def prompt_approach():
-    sheet = openpyxl.load_workbook("left_over.xlsx")["Sheet1"]
-    model_name = "chatgpt-4o-latest"
-    classification_model_name = "chatgpt-4o-latest"
-    
+def load_startups_excel(startups_file):
+    sheet = openpyxl.load_workbook(startups_file)["Sheet1"]
+    return sheet
+
+def create_results_file():    
     # Save the results to a new Excel file
     output_wb = openpyxl.Workbook()
     output_sheet = output_wb.active
     output_sheet.title = "AI Use Cases"
 
+    return output_sheet, output_wb
+
+
+def prompt_approach(model_name, classification_model_name, sheet, output_sheet, output_wb):
     # web_scraper_obj = None
 
     # sheet.max_row + 1
@@ -29,7 +33,7 @@ def prompt_approach():
         startup_name = sheet.cell(row=row, column=1).value
 
         # Initialize the objects
-        web_scraper_obj = WebScraper(url)
+        web_scraper_obj = WebScraper()
         prompts_obj = Prompts(TOTAL_USE_CASES)
         ai_use_cases = []
 
@@ -40,7 +44,6 @@ def prompt_approach():
         web_scraper_obj.load_page()
         page_content = web_scraper_obj.get_page_content(model_name)
         page_links = web_scraper_obj.get_page_links()
-
 
         # Use chat model to get relavant links
         chat_links_obj = ChatGPT(model_name, prompts_obj.get_important_links(page_links), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
@@ -127,8 +130,6 @@ def save_to_excel(output_sheet, output_wb, startup_name, homepage_url, web_scrap
     output_wb.save("ai_use_cases.xlsx")
 
 
-
-
 def extract_use_cases_from_response(use_cases_full_text):
     all_use_cases = []
     # Extract each AI use case from the full text
@@ -144,7 +145,40 @@ def extract_use_cases_from_response(use_cases_full_text):
 
 
 if __name__ == "__main__":
-    prompt_approach()
+    # Load the startups excel
+    sheet = load_startups_excel("left_over.xlsx")
+
+    # Create the results file
+    output_sheet, output_wb = create_results_file()
+
+    # prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb)
+    # check page content extraction
+        # sheet.max_row + 1
+
+    # Initialize the objects
+    web_scraper_obj = WebScraper()
+    
+    for row in range(38, 77):
+        url = sheet.cell(row=row, column=2).value
+        startup_name = sheet.cell(row=row, column=1).value
+
+        web_scraper_obj.set_url(url)
+
+        homepage_url = web_scraper_obj.get_url()
+        print(f"URL: {web_scraper_obj.get_url()}")
+        
+        # Load page, get the content
+        web_scraper_obj.load_page()
+        page_content = web_scraper_obj.get_page_content(model_name="chatgpt-4o-latest")
+        page_links = web_scraper_obj.get_page_links()
+
+        print(f"Page Content: {page_content}\n\n\n")
+
+        # Save the page content to the Excel file
+        output_sheet.append([startup_name, homepage_url, page_content, str(page_links)])
+
+        # Save the workbook
+        output_wb.save("page_contents.xlsx")
 
     # pass
 
