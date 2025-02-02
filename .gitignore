@@ -1,0 +1,8 @@
+custom-env/
+.env
+*.ipynb
+*.xlsx
+*.csv
+datasets/
+__pycache__/
+Previous Results/
