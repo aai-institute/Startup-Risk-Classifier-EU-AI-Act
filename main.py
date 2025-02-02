@@ -157,10 +157,14 @@ if __name__ == "__main__":
 
     # Initialize the objects
     web_scraper_obj = WebScraper()
+    model_name="chatgpt-4o-latest"
     
-    for row in range(38, 77):
+    for row in range(2, 10):
         url = sheet.cell(row=row, column=2).value
         startup_name = sheet.cell(row=row, column=1).value
+
+        prompts_obj = Prompts(TOTAL_USE_CASES)
+        ai_use_cases = []
 
         web_scraper_obj.set_url(url)
 
@@ -172,10 +176,22 @@ if __name__ == "__main__":
         page_content = web_scraper_obj.get_page_content(model_name="chatgpt-4o-latest")
         page_links = web_scraper_obj.get_page_links()
 
-        print(f"Page Content: {page_content}\n\n\n")
+        # print(f"Page Content: {page_content}\n\n\n")
+
+        # Load page, get the content and links
+        web_scraper_obj.load_page()
+        page_content = web_scraper_obj.get_page_content(model_name)
+        page_links = web_scraper_obj.get_page_links()
+
+        # Use chat model to get relavant links
+        chat_links_obj = ChatGPT(model_name, prompts_obj.get_important_links(page_links), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+        chat_links_response, input_tokens, output_tokens = chat_links_obj.chat_model()
+        chat_links_response = extract_list(chat_links_response)
+        
+        print(f"Important Links: {chat_links_response}")
 
         # Save the page content to the Excel file
-        output_sheet.append([startup_name, homepage_url, page_content, str(page_links)])
+        output_sheet.append([startup_name, homepage_url, page_content, str(page_links), str(chat_links_response)])
 
         # Save the workbook
         output_wb.save("page_contents.xlsx")

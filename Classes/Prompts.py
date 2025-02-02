@@ -12,7 +12,9 @@ class Prompts():
         return update_summary
 
     def get_important_links(self, page_links):
-        important_links = f"The following are all the links available on the homepage of a company's website. Use your best judgement to determine a maximum of {self.__total_use_cases - 1} links which are most important to find all the AI use cases this company is implementing. Return only a list of links and no other text. If you can not find any relavant links, then return an empty list only.\n\nLinks: {page_links}"
+        # important_links = f"The following are all the links available on the homepage of a company's website. Use your best judgement to determine a maximum of {self.__total_use_cases - 1} links which are most important to find all the AI use cases this company is implementing. Return only a list of links and no other text. If you can not find any relavant links, then return an empty list only.\n\nLinks: {page_links}"
+
+        important_links = f"The following are all the links available on the homepage of a company's website. Use your best judgement to determine a maximum of {self.__total_use_cases - 1} links which may be important to visit to find more about the company. Any links that look like will have AI related information about this company should be prefered. Do not include any contant us, impressum, privacy, terms-and-conditions or cookie related pages. Return only a list of links and no other text. If you can not find any relavant links, then return an empty list only.\n\nLinks: {page_links}"
         
         return important_links
     
