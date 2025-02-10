@@ -31,18 +31,28 @@ class LinkWorker(Selenium):
         parsed_url = urlparse(url)
         # Normalize empty path to '/'
         path = parsed_url.path if parsed_url.path else '/'
-        cleaned_url = urlunparse((parsed_url.scheme, parsed_url.netloc, path, '', '', ''))
+        cleaned_url = urlunparse((parsed_url.scheme, parsed_url.hostname, path, '', '', ''))
         return cleaned_url
+
+
+    def toggle_www(self, url):
+        if "www." in url:
+            return url.replace("www.", "", 1)  # Remove 'www.' only once
+        else:
+            parts = url.split("://")
+            if len(parts) == 2:
+                return f"{parts[0]}://www.{parts[1]}"  # Add 'www.'
+        return None  # Return None if modification is not possible
 
     def find_elements_by_xpath(self, xpath):
         try:
             elements = self.__driver.find_elements(By.XPATH, xpath)
             return elements
         except NoSuchElementException:
-            print(f"Element with XPath {xpath} not found. Function: find_elements_by_xpath")
+            # print(f"Element with XPath {xpath} not found. Function: find_elements_by_xpath")
             return []
         except Exception as e:  
-            print(f"Unexpected error on XPath {xpath}. Reason: {e}. Function: find_elements_by_xpath")
+            # print(f"Unexpected error on XPath {xpath}. Reason: {e}. Function: find_elements_by_xpath")
             return []
 
     def page_scroller(self):
@@ -65,9 +75,7 @@ class LinkWorker(Selenium):
                 break
     
     def cookie_acceptor(self):
-        # cookie_button_labels = ["Accept", "Agree", "Got it", "Continue", "OK", "I Accept", "I Agree", "Allow", "Accept Cookies", "Yes, I Agree", "Akzeptieren", "Einverstanden", "Zustimmen", "Fortfahren", "Alle auswählen", "Alle akzeptieren", "Alles akzeptieren", "Zustimmen und weiter"]
-
-        cookie_button_labels = ["Accept", "Accept All", "Agree", "Got it", "Continue", "OK", "I Accept", "I Agree", "Allow", "Accept Cookies", "Yes, I Agree", "Akzeptieren", "Einverstanden", "Zustimmen", "Fortfahren", "Ablehnen", "Alle auswählen", "auswählen", "Alle akzeptieren", "Alles akzeptieren", "Alle ablehnen", "Zustimmen und weiter", "Alle zulassen"]
+        cookie_button_labels = ["Accept", "Accept All", "Allow All", "Agree", "Got it", "Continue", "OK", "I Accept", "I Agree", "Allow", "Accept Cookies", "Yes, I Agree", "Akzeptieren", "Einverstanden", "Zustimmen", "Fortfahren", "Ablehnen", "Alle auswählen", "auswählen", "Alle akzeptieren", "Alles akzeptieren", "Alle ablehnen", "Zustimmen und weiter", "Alle zulassen"]
 
         potential_cookie_elems = self.find_elements_by_xpath("//button") + self.find_elements_by_xpath("//a")
         for element in potential_cookie_elems:
@@ -76,32 +84,21 @@ class LinkWorker(Selenium):
                 # Compare only in lowercase
                 if potential_cookie_word.lower() in [x.lower() for x in cookie_button_labels]:
                     element.click()
-                    print(f"Cookie acceptor found and clicked: {potential_cookie_word}")
+                    # print(f"Cookie acceptor found and clicked: {potential_cookie_word}")
                     time.sleep(1)
                     return True
             except StaleElementReferenceException:
-                print("StaleElementReferenceException encountered. Retrying...")
+                # print("StaleElementReferenceException encountered. Retrying...")
                 continue  # Retry by checking the next element
             except NoSuchElementException:
-                print("NoSuchElementException: Element may have been removed.")
+                # print("NoSuchElementException: Element may have been removed.")
                 continue
             except Exception as e:
-                print(f"An unexpected exception occurred: {e}")
+                # print(f"An unexpected exception occurred: {e}")
                 continue
         
-        print("Cookie acceptor not found")
+        # print("Cookie acceptor not found")
         return False
-        
-    def get_base_domain(self, cleaned_url):
-        # Extract the netloc (Remove the port number, if any)
-        parsed_url = urlparse(cleaned_url)
-        netloc = parsed_url.netloc.split(":")[0] 
-        
-        # Remove 'www.' if present
-        if netloc.startswith("www."):
-            netloc = netloc[4:]
-
-        return netloc
 
     def count_tokens(self, text, model_name):
         encoding = tiktoken.encoding_for_model(model_name)
@@ -145,7 +142,7 @@ class LinkWorker(Selenium):
         all_text = self.get_body_text()
 
         body_length = len(all_text)
-        print(f"Page character length: {body_length}")
+        # print(f"Page character length: {body_length}")
         tokens = self.count_tokens(all_text, model_name)
             
         while tokens > 8000:
@@ -153,27 +150,29 @@ class LinkWorker(Selenium):
             all_text = all_text[:-1000]
             tokens = self.count_tokens(all_text, model_name)
         
-        print(f"Token count in raw page: {tokens}")
+        # print(f"Token count in raw page: {tokens}")
 
         # Remove illegal characters that would not save in Excel
         all_text = escape(all_text)
 
         return all_text
     
-    def scrape_page_links(self, cleaned_url):
+    def scrape_page_links(self, source_url):
         soup = BeautifulSoup(self.__body_html, "html.parser")
         links = soup.find_all("a", href=True)
 
         same_domain_links = []
         for link in links:
-            full_link = self.clean_url(urljoin(cleaned_url, link['href']))  # Resolve relative URL and clean
-            parsed_link = urlparse(full_link)
+            url_found = self.clean_url(urljoin(source_url, link['href']))  # Resolve relative URL and clean
+            parsed_link = urlparse(url_found)
+            # print(f"Found URL: {url_found}")
 
-            # Check if the link is from the same domain, not already in the list and not the current URL
-            if self.get_base_domain(cleaned_url) == parsed_link.netloc and full_link not in same_domain_links and full_link != cleaned_url:
-                same_domain_links.append(full_link)
+            # Check if the found url is from the main domain, not already in the list and not the source URL (i.e. homepage)
+            if urlparse(source_url).hostname == parsed_link.hostname and url_found not in same_domain_links and url_found != source_url:
+                same_domain_links.append(url_found)
             
             if len(same_domain_links) > 80:
                 break
 
+        # print(f"Links found: {same_domain_links}")
         return same_domain_links

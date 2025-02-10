@@ -4,7 +4,7 @@ class ChatGPT():
         self.__prompt = prompt
         self.__context = context
         self.__client = client
-        print(f"ChatGPT class initialized with model {self.__model_name}")
+        # print(f"ChatGPT class initialized with model {self.__model_name}")
 
     def set_prompt(self, prompt):
         self.__prompt = prompt
