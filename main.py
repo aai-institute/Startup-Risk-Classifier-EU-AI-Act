@@ -23,8 +23,8 @@ def create_results_file():
 
     return output_sheet, output_wb
 
-def content_shortener(model_name, prompts_obj, page_content):
-    chat_shorten_page_obj = ChatGPT(model_name, prompts_obj.shorten_page_content(page_content), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+def content_shortener(content_shortener_model, prompts_obj, page_content):
+    chat_shorten_page_obj = ChatGPT(content_shortener_model, prompts_obj.shorten_page_content(page_content), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
     chat_shorten_page_response, input_tokens, output_tokens = chat_shorten_page_obj.chat_model()
     # print(f"Shortened Page Content: {chat_shorten_page_response}")
 
@@ -32,12 +32,12 @@ def content_shortener(model_name, prompts_obj, page_content):
 
 
 
-def prompt_approach(model_name, classification_model_name, sheet, output_sheet, output_wb):
+def prompt_approach(model_name, classification_model_name, content_shortener_model, sheet, output_sheet, output_wb):
     # Initialize the objects
     web_scraper_obj = WebScraper()
 
     # sheet.max_row + 1
-    for row in range(2, 10):
+    for row in range(2, 20):
         url = sheet.cell(row=row, column=2).value
         startup_name = sheet.cell(row=row, column=1).value
         
@@ -69,7 +69,7 @@ def prompt_approach(model_name, classification_model_name, sheet, output_sheet, 
         print(f"Important Links: {chat_links_response}")
 
         # Use a smaller model to remove cookie and unrelated text - reduces chance of classification error
-        shortened_content, input_tokens, output_tokens = content_shortener(model_name, prompts_obj, page_content)
+        shortened_content, input_tokens, output_tokens = content_shortener(content_shortener_model, prompts_obj, page_content)
         # Update token cost
         web_scraper_obj.set_token_cost(input_tokens, output_tokens, model_name)
         # print(f"Shortened Content: {shortened_content}")
@@ -86,7 +86,7 @@ def prompt_approach(model_name, classification_model_name, sheet, output_sheet, 
 
         # Update the startup use cases with the important links
         # Also return the updated token count
-        all_ai_use_cases = traverse_links(web_scraper_obj, chat_links_response, model_name, ai_use_cases, prompts_obj)
+        all_ai_use_cases = traverse_links(web_scraper_obj, chat_links_response, model_name, content_shortener_model, ai_use_cases, prompts_obj)
 
         # Prompt based approach for the EU AI Act
         eu_ai_act_obj = ChatGPT(classification_model_name, prompts_obj.eu_ai_act_prompt(all_ai_use_cases), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
@@ -104,7 +104,7 @@ def prompt_approach(model_name, classification_model_name, sheet, output_sheet, 
         web_scraper_obj.reset_redirect_url()
 
 
-def traverse_links(web_scraper_obj, links, model_name, ai_use_cases, prompts_obj):
+def traverse_links(web_scraper_obj, links, model_name, content_shortener_model, ai_use_cases, prompts_obj):
     # Traverse the important links
     for link in links:
         web_scraper_obj.set_url(link)
@@ -113,7 +113,7 @@ def traverse_links(web_scraper_obj, links, model_name, ai_use_cases, prompts_obj
         page_content = web_scraper_obj.get_page_content(model_name)
 
         # Shorten the content
-        shortened_content, input_tokens, output_tokens = content_shortener(model_name, prompts_obj, page_content)
+        shortened_content, input_tokens, output_tokens = content_shortener(content_shortener_model, prompts_obj, page_content)
         # Update token cost
         web_scraper_obj.set_token_cost(input_tokens, output_tokens, model_name)
 
@@ -178,48 +178,9 @@ if __name__ == "__main__":
     # Create the results file
     output_sheet, output_wb = create_results_file()
 
-    prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb)
+    prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb)
     
     # --- check page content extraction ---
-    # Initialize the objects
-    # web_scraper_obj = WebScraper()
-    # model_name="chatgpt-4o-latest"
-    
-    # for row in range(2, 10):
-    #     url = sheet.cell(row=row, column=2).value
-    #     startup_name = sheet.cell(row=row, column=1).value
-
-    #     prompts_obj = Prompts(TOTAL_PAGE_CRAWLS)
-    #     ai_use_cases = []
-
-    #     web_scraper_obj.set_url(url)
-
-    #     raw_homepage_url = web_scraper_obj.get_url()
-    #     print(f"URL: {web_scraper_obj.get_url()}")
-        
-    #     # Load page, get the content and links
-    #     web_scraper_obj.load_page()
-    #     # Update homepage URL in case of redirection
-    #     raw_homepage_url = web_scraper_obj.get_url()
-
-    #     # Get the content and links
-    #     page_content = web_scraper_obj.get_page_content(model_name)
-    #     page_links = web_scraper_obj.get_page_links()
-
-
-    #     # print(f"Page Links: {page_links}")
-    #     # Use chat model to get relavant links
-    #     chat_links_obj = ChatGPT(model_name, prompts_obj.get_important_links(page_links), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
-    #     chat_links_response, input_tokens, output_tokens = chat_links_obj.chat_model()
-    #     chat_links_response = extract_list(chat_links_response)
-        
-    #     print(f"Important Links: {chat_links_response}")
-
-    #     # Save the page content to the Excel file
-    #     output_sheet.append([startup_name, raw_homepage_url, page_content, str(page_links), str(chat_links_response)])
-
-    #     # Save the workbook
-    #     output_wb.save("page_contents.xlsx")
 
     # pass
 

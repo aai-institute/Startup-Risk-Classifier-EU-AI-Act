@@ -13,13 +13,13 @@ class WebScraper(LinkWorker):
             input_cost = (input_tokens / 1000) * 0.005
             output_cost = (output_tokens / 1000) * 0.015
             self.__total_token_cost += input_cost + output_cost
-        elif model_name == "o1-preview":
-            input_cost = (input_tokens / 1000) * 0.015
-            output_cost = (output_tokens / 1000) * 0.06
-            self.__total_token_cost += input_cost + output_cost
         elif model_name == "gpt-4o-mini":
             input_cost = (input_tokens / 1000) * 0.00015
             output_cost = (output_tokens / 1000) * 0.0006
+            self.__total_token_cost += input_cost + output_cost
+        elif model_name == "o3-mini":
+            input_cost = (input_tokens / 1000) * 0.0011
+            output_cost = (output_tokens / 1000) * 0.0044
             self.__total_token_cost += input_cost + output_cost
         else:
             raise ValueError("Model name not recognized. Token cost not calculated.")
