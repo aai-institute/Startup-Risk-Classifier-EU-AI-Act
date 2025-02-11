@@ -154,10 +154,11 @@ Examples:
 
 Format you answer in this way:  
 AI Use Case: 
+Use Case Description: 
 Risk Classification: 
-Reason: 
-Requires Additional Verification: [If you had to assume something for this classification, write Yes/No followed by what was missing in the use case that would have helped you classify it better]
+Reason: [Cite relevant aspects from the EU AI Act in your explanation]
 Confidence Level: [How confident are you in your current classification? Pick a value from 0-100%]
+Requires Additional Information: [If you have doubts about this classification, write Yes/No followed by what additional informtaion is absolutely necessary without which you can't be sure about the classification]
 
 Do not give any intros or outros. The following are the AI Use cases of the startup you have to classify using all of the above rules:  
 {all_use_cases}
