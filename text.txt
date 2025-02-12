@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AJAX File Upload</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+    <form id="uploadForm">
+        <input type="file" id="fileInput" name="file">
+        <button type="submit">Upload</button>
+    </form>
+
+    <div id="message"></div>
+
+    <script>
+        $(document).ready(function () {
+            $("#uploadForm").submit(function (event) {
+                event.preventDefault(); // Prevent normal form submission
+                
+                var formData = new FormData();
+                var fileInput = $("#fileInput")[0].files[0];
+
+                if (!fileInput) {
+                    $("#message").text("Please select a file.");
+                    return;
+                }
+
+                formData.append("file", fileInput);
+
+                $.ajax({
+                    url: "/upload",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        $("#message").text(response.message);
+                    },
+                    error: function () {
+                        $("#message").text("An error occurred while uploading.");
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

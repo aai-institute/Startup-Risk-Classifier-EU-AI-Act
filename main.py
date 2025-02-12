@@ -4,12 +4,28 @@ from openai import OpenAI
 import re
 import ast
 import openpyxl
+import uuid
 
+import time
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
-TOTAL_PAGE_CRAWLS = 4
+from flask import Flask, render_template, url_for, request, redirect, jsonify, Response, send_file
+from flask_socketio import SocketIO
+
+from flask_wtf import FlaskForm
+from wtforms import FileField, SubmitField
+from werkzeug.utils import secure_filename
+import os
+
+
+
+
+
+
+
+TOTAL_PAGE_CRAWLS = 2
 
 def load_startups_excel(startups_file):
     sheet = openpyxl.load_workbook(startups_file)["Sheet1"]
@@ -32,12 +48,34 @@ def content_shortener(content_shortener_model, prompts_obj, page_content):
 
 
 
-def prompt_approach(model_name, classification_model_name, content_shortener_model, sheet, output_sheet, output_wb):
+def prepare_AI_Act_prompt(prompt_file, all_ai_use_cases):
+
+    # Read file content into a variable
+    with open(prompt_file, "r", encoding="utf-8") as file:
+        file_content = file.read()
+
+    file_content += f"""Format your answer in this way:  
+AI Use Case: 
+Use Case Description: 
+Risk Classification: 
+Reason: [Cite the relevant articles and annexes from the prompts above in your explanation]
+Requires Additional Information: [If you have doubts about this classification, write Yes/No followed by what additional informtaion is absolutely necessary without which you can't be sure about the classification]
+
+Do not give any intros or outros. The following are the AI Use cases of the startup you have to classify using all of the above rules:  
+{all_ai_use_cases}
+"""
+
+    # print(file_content)  # Output all content
+    return file_content
+
+
+
+def prompt_approach(model_name, classification_model_name, content_shortener_model, sheet, output_sheet, output_wb, prompt_file):
     # Initialize the objects
     web_scraper_obj = WebScraper()
 
     # sheet.max_row + 1
-    for row in range(2, 20):
+    for row in range(2, sheet.max_row + 1):
         url = sheet.cell(row=row, column=2).value
         startup_name = sheet.cell(row=row, column=1).value
         
@@ -47,7 +85,9 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
         # First set the URL (this cleans the URL), then get the cleaned URL
         web_scraper_obj.set_url(url)
         raw_homepage_url = web_scraper_obj.get_url()
-        print(f"URL: {web_scraper_obj.get_url()}")
+        # print(f"URL: {web_scraper_obj.get_url()}")
+        time.sleep(1)
+        yield f"data: Row {row-1}: {startup_name}\n\n"
         
         # Load page, get the content and links
         web_scraper_obj.load_page()
@@ -89,7 +129,9 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
         all_ai_use_cases = traverse_links(web_scraper_obj, chat_links_response, model_name, content_shortener_model, ai_use_cases, prompts_obj)
 
         # Prompt based approach for the EU AI Act
-        eu_ai_act_obj = ChatGPT(classification_model_name, prompts_obj.eu_ai_act_prompt(all_ai_use_cases), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+        eu_ai_act_prompt = prepare_AI_Act_prompt(prompt_file, all_ai_use_cases)
+
+        eu_ai_act_obj = ChatGPT(classification_model_name, eu_ai_act_prompt, [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
         eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
         # print(f"EU AI Act Response: {eu_ai_act_response}")
 
@@ -154,7 +196,9 @@ def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_s
     output_sheet.append(row)
 
     # Save the workbook
-    output_wb.save("ai_use_cases.xlsx")
+    unique_download_file = f"{uuid.uuid4().hex}.xlsx"
+    flask_files_dict["download_file"] = unique_download_file
+    output_wb.save(f"flask_results/{unique_download_file}")
 
 
 def extract_use_cases_from_response(use_cases_full_text):
@@ -171,19 +215,128 @@ def extract_use_cases_from_response(use_cases_full_text):
     return all_use_cases    
 
 
-if __name__ == "__main__":
-    # Load the startups excel
-    sheet = load_startups_excel("to_classify.xlsx")
+
+
+
+
+
+app = Flask(__name__)
+socketio = SocketIO(app)
+
+app.config['SECRET_KEY'] = 'mysecretkey'
+app.config['UPLOAD_FOLDER'] = 'uploads'
+
+flask_files_dict = {}
+
+ALLOWED_EXTENSIONS = {
+    "file1": {"xlsx"},
+    "file2": {"docx"}
+}
+
+class UploadFileForm(FlaskForm):
+    file1 = FileField('Excel File (.xlsx only)')
+    file2 = FileField('Word File (.docx only)')
+    submit = SubmitField('Upload Files')
+
+def allowed_file(filename, file_type):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS[file_type]
+
+@app.route('/', methods=['GET'])
+def index():
+    form = UploadFileForm()
+    return render_template('index.html', form=form)
+
+@app.route("/upload", methods=["POST"])
+def upload():
+    if 'file1' not in request.files or 'file2' not in request.files:
+        return jsonify({"error": "Both files are required"}), 400
+
+    file1 = request.files['file1']
+    file2 = request.files['file2']
+
+    # Check if files are selected
+    if file1.filename == '' or file2.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+
+    # Validate file types
+    if not allowed_file(file1.filename, "file1"):
+        return jsonify({"error": "File 1 must be an Excel (.xlsx) file"}), 400
+    if not allowed_file(file2.filename, "file2"):
+        return jsonify({"error": "File 2 must be a Word (.docx) file"}), 400
+
+    # Generate unique filenames using UUID
+    unique_filename1 = f"{uuid.uuid4().hex}_{secure_filename(file1.filename)}"
+    unique_filename2 = f"{uuid.uuid4().hex}_{secure_filename(file2.filename)}"
+
+    # Save files
+    upload_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'])
+    os.makedirs(upload_dir, exist_ok=True)
+
+    file1_path = os.path.join(upload_dir, unique_filename1)
+    file2_path = os.path.join(upload_dir, unique_filename2)
+
+    file1.save(file1_path)
+    file2.save(file2_path)
+
+    # Store unique filenames for future retrieval
+    flask_files_dict["startups_file"] = unique_filename1
+    flask_files_dict["prompt_file"] = unique_filename2
+
+    return jsonify({
+        "message": "Files uploaded successfully!",
+        "files": {
+            "startups_file": unique_filename1,
+            "prompt_file": unique_filename2
+        }
+    })
+
+
+import time
+
+def long_running_function():
+    yield f"data: Processing started. Each startup website will be scraped. Please wait...\n\n"
+    time.sleep(1)
+
+    sheet = load_startups_excel(f"uploads/{flask_files_dict['startups_file']}")
+    prompt_file = f"uploads/{flask_files_dict['prompt_file']}"
+
 
     # Create the results file
     output_sheet, output_wb = create_results_file()
 
-    prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb)
+    yield from prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, prompt_file=prompt_file)
+
+    yield "data: Processing complete!\n\n"
+
+
+@app.route('/run_process', methods=['GET'])
+def run_process():
+    return Response(long_running_function(), mimetype='text/event-stream')
+
+
+@app.route('/download')
+def download_file():
+    # file_path = os.path.join(os.getcwd(), "ai_use_cases.xlsx")
+    file_path = os.path.join(os.getcwd(), f"flask_results/{flask_files_dict['download_file']}")
+    return send_file(file_path, as_attachment=True)
+
+
+
+
+if __name__ == "__main__":
+    # # Load the startups excel
+    # sheet = load_startups_excel("to_classify.xlsx")
+
+    # # Create the results file
+    # output_sheet, output_wb = create_results_file()
+
+    # prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb)
     
-    # --- check page content extraction ---
+    # # --- check page content extraction ---
+
+    app.run(debug=True)
 
     # pass
-
 
 
 

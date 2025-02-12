@@ -1,47 +1,157 @@
-class Prompts():
-    def __init__(self, total_use_cases):
-        self.__total_use_cases = total_use_cases
-        self.__use_english_prompt = f"Respond in English.\n"
-    
-    def shorten_page_content(self, full_page_content):
-        shortened_content = f"{self.__use_english_prompt} Remove any content from the following that doesn't directly describe the company's AI products, AI services or AI offerings. Mention the name of the company if its available in the content.\n Page Content: \n\n{full_page_content}"
-        
-        return shortened_content
+You are an expert lawyer who is intimately familiar with the European Union’s Artificial Intelligence (EU AI) Act. 
 
-    def startup_summary(self, startupName, raw_text):
-        startup_summary = f"{self.__use_english_prompt} The following is the content of the homepage of a company's website whose supposed name is \"{startupName}\", but confirm this from the homepage content.\n\nYour task is to find all the AI use cases this company is implementing. Mention the AI process they use to implement that use case and the type of models they use. You can also use your own knowledge to help with this task. Do not guess any use case, only find the ones that the company is actually implementing with AI or is currently under development. Format all the AI use cases in this format:\nAI Use Case: [name the use case here]\nUse Case Description:\nAI Process Used:\nType of Models Used:\n\nFocus only on the AI uses cases implemented by the company and leave out generic stuff about the company. If the content of this webpage is just a page error, then output 'Page Error' and then the reason. \n\nContent of the homepage: {raw_text}"
+Please classify a given AI use case into the following categories based on the EU AI Act’s risk classification rules: 
 
-        return startup_summary
-
-    def update_startup_summary(self, last_known_use_cases, page_content):
-        update_summary = f"{self.__use_english_prompt} The following are the last known AI use cases I have for a company.\n\nYour task is to update and find all other AI use cases this company is implementing by using the content of a webpage of this company. Mention the AI process they use to implement that use case and the type of models they use. You can also use your own knowledge to help with this task. Do not guess any use case, only find the ones that the company is actually implementing with AI or is currently under development. Format all the AI use cases in this format:\nAI Use Case: [name the use case here]\nUse Case Description:\nAI Process Used:\nType of Models Used:\n\nFocus only on the AI uses cases implemented by the company and leave out generic stuff about the company. If there is no valuable information in the content of the page, then just output all the last known AI use cases I have provided. If I also did not provide last known AI use cases, then output 'Page Error' and then the reason. \n\nLast known AI Uses Cases: {last_known_use_cases}.\n\nContent of the webpage: {page_content}"
-        return update_summary
-
-    def get_important_links(self, page_links):
-        important_links = f"The following are all the links available on the homepage of a company's website. Use your best judgement to find a maximum of {self.__total_use_cases - 1} links which have the potential to describe more about the AI products or services offered by the company. This does not include pages that are similar to contact us, about us, pricing, impressum, privacy, terms-and-conditions or cookie related pages. Return only a list of links and no other text. If you can not find any relavant links, then return an empty list only.\n\nLinks: {page_links}"
-        
-        return important_links
-    
-    def eu_ai_act_prompt(self, all_use_cases):
-        eu_ai_act = f"""
-        You are an expert lawyer who is intimately familiar with the European Union's Artificial Intelligence (EU AI) Act. 
-
-Please classify a given AI use case into the following categories based on the EU AI Act's risk classification rules: 
-
-1) Prohibited  
-2) High-risk  
+1) Prohibited AI systems  
+2) High-risk AI systems  
 3) Systems with transparency obligations  
-4) Low-risk
+4) Low-risk AI systems
 
 During this analysis, do not hallucinate facts, do not make the classification based on your assumptions about these risk classes, and rely only on the information provided in the prompts. 
 
 Please perform this classification in the following manner: 
 
+Step 1: Check if the AI system is prohibited based on the following information  
+“””
 
-Step 1: Check if the AI Use Case is high-risk based on the following information:
+I need help determining if my AI use case is prohibited under the EU AI Act. Please analyze it against each of the following prohibitions:
 
-'''
-To help determine if the AI Use Case is classified as high-risk under the EU AI Act, please analyze the following information:
+A) Article 5(1)(a) \- Harmful Manipulation and Deception Conditions:
+
+* Must involve placing on market, putting into service or use of an AI system  
+* System must deploy subliminal techniques beyond consciousness OR purposefully manipulative OR deceptive techniques  
+* Must have objective/effect of materially distorting behavior  
+* Must cause/be reasonably likely to cause significant harm
+
+Key definitions:
+
+* Subliminal techniques: operate beyond conscious awareness  
+* Significant harm: includes physical, psychological, financial harm  
+* Material distortion: substantial impact on behavior, not minor influence
+
+Examples:
+
+* AI chatbot promoting self-harm  
+* AI system using hidden emotional manipulation to drive addiction  
+* AI using subliminal messaging to influence purchasing decisions
+
+B) Article 5(1)(b) \- Harmful Exploitation of Vulnerabilities Conditions:
+
+* Must involve placing on market, putting into service or use of an AI system  
+* System must exploit vulnerabilities due to:  
+  * Age  
+  * Disability  
+  * Specific social/economic situation  
+* Must have objective/effect of materially distorting behavior  
+* Must cause/be reasonably likely to cause significant harm
+
+Key definitions:
+
+* Vulnerabilities: cognitive, emotional, physical susceptibilities  
+* Social/economic situation: includes poverty, minority status, migration status
+
+Examples:
+
+* AI system targeting elderly with deceptive financial scams  
+* AI exploiting children's vulnerabilities through addictive design  
+* AI targeting socially disadvantaged groups with predatory loans
+
+C) Article 5(1)(c) \- Social Scoring Conditions:
+
+* Must involve placing on market, putting into service or use of an AI system  
+* Must evaluate/classify persons based on social behavior or personal characteristics over time  
+* Must lead to either:  
+  * Detrimental treatment in unrelated social contexts OR  
+  * Unjustified/disproportionate treatment
+
+Key definitions:
+
+* Social behavior: actions, habits, interactions in society  
+* Personal characteristics: demographic info, preferences, behaviors
+
+Examples:
+
+* Government system scoring citizens across multiple contexts affecting access to services  
+* AI system using unrelated social data to determine access to benefits  
+* System using social media behavior to restrict access to essential services
+
+D) Article 5(1)(d) \- Individual Crime Risk Assessment Conditions:
+
+* Must involve placing on market, putting into service or use of an AI system  
+* Must assess/predict risk of person committing crime  
+* Must be based solely on:  
+  * Profiling OR  
+  * Personality trait assessment
+
+Key definitions:
+
+* Profiling: automated processing to evaluate personal aspects  
+* Crime prediction: forward-looking assessment of future crimes
+
+Examples:
+
+* AI system predicting crime risk based only on personality traits  
+* System assessing likelihood of offending based purely on profiling
+
+E) Article 5(1)(e) \- Untargeted Facial Image Scraping Conditions:
+
+* Must involve placing on market, putting into service or use of an AI system  
+* Must create/expand facial recognition databases  
+* Must use untargeted scraping  
+* Must scrape from internet or CCTV footage
+
+Key definitions:
+
+* Untargeted scraping: indiscriminate collection without specific focus  
+* Facial recognition database: collection for matching facial images
+
+F) Article 5(1)(f) \- Emotion Recognition Conditions:
+
+* Must involve placing on market, putting into service or use of an AI system  
+* Must infer emotions  
+* Must be used in:  
+  * Workplace OR  
+  * Educational institutions  
+* Exception: medical or safety reasons
+
+Key definitions:
+
+* Emotion recognition: identifying/inferring emotions from biometric data  
+* Workplace: any physical/virtual work space
+
+G) Article 5(1)(g) \- Biometric Categorization Conditions:
+
+* Must involve placing on market, putting into service or use of AI system  
+* Must categorize individuals based on biometric data  
+* Must deduce/infer:  
+  * Race  
+  * Political opinions  
+  * Trade union membership  
+  * Religious/philosophical beliefs  
+  * Sex life/orientation
+
+H) Article 5(1)(h) \- Real-time Remote Biometric Identification Conditions:
+
+* Must be use of real-time RBI system  
+* Must be in publicly accessible spaces  
+* Must be for law enforcement  
+* Exceptions for:  
+  * Specific victim searches  
+  * Prevention of threats  
+  * Criminal suspect identification
+
+“””
+
+If you believe it is prohibited, please: 
+
+- Return the rationale along with a citation for which clause you believe applies  
+- Terminate the analysis here. 
+
+If you believe it is *not* prohibited or are unsure, please continue to Step 2:
+
+Step 2: Check if the AI system is high-risk based on the following information  
+“””  
+To help determine if my AI system is classified as high-risk under the EU AI Act, please analyze the following information:
 
 1\. Product/Component Assessment:
 
@@ -161,14 +271,21 @@ d) Preparatory Tasks:
 \- Is it only used for translation?
 
 Important: These exceptions do not apply if the system performs profiling of natural persons.  
-'''
+“””
 
+If you believe it is high-risk, please:
 
+- Return the rationale along with a citation for which clause you believe applies  
+- Continue to step 3
 
-Step 2: Check if additional transparency obligations apply to the AI Use Case based on the following information  
+If you believe it is *not* high-risk or are unsure, 
 
-'''  
-To help determine if the AI Use Case is classified as having transparency obligations under the EU AI Act, please analyze the following information:
+- Return the reason for uncertainty  
+- please continue to Step 3
+
+Step 3: Check if additional transparency obligations apply to the system based on the following information  
+“””  
+To help determine if my AI system is classified as having transparency obligations under the EU AI Act, please analyze the following information:
 
 Key Categories Requiring Transparency:
 
@@ -198,37 +315,27 @@ Key Categories Requiring Transparency:
 * Exception: AI-generated text that undergoes human review/editorial control  
 * Example: AI-generated videos of real people
 
-'''
+“””
 
-If you believe transparency obligations apply, please do the following:
+If you believe transparency obligations apply, please:
 
+- Return the rationale along with a citation for which clause you believe applies  
 - If the system was also high-risk based on the previous step, please return: “high-risk and transparency obligations”  
 - Terminate the analysis here
 
 If you believe transparency obligations *do not apply* or are unsure: 
 
+- Return the rationale  
 - Return “low-risk”
 
 
-
-Format your final answer for each AI Use Case in this way only:
-
+Format you answer in this way:  
 AI Use Case: 
 Use Case Description: 
 Risk Classification: 
-Reason: [Cite the relevant clauses from the instructions above in your explanation]
+Reason: [Cite the relevant articles and annexes from the prompts above in your explanation]
 Confidence Level: [How confident are you in your current classification? Pick a value from 0-100%]
+Requires Additional Information: [If you have doubts about this classification, write Yes/No followed by what additional informtaion is absolutely necessary without which you can't be sure about the classification]
 
 Do not give any intros or outros. The following are the AI Use cases of the startup you have to classify using all of the above rules:  
 {all_use_cases}
-        """
-
-        # print(eu_ai_act)
-        # eu_ai_act_without_prompt = f"For each of the following AI use cases, classify them according to the EU AI Act. Format you answer in this way:\n\nAI Use Case:\nContextual Considerations:\nRisk Classification:\nReason:\n\n{all_use_cases}"
-        # print(eu_ai_act_without_prompt)
-        return eu_ai_act
-
-
-
-
-# Requires Additional Information: [If you have doubts about this classification, write 'Yes or No' followed by what additional informtaion is absolutely necessary without which you can't be sure about the classification]
