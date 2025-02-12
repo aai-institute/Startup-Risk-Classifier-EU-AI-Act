@@ -11,16 +11,16 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, render_template, url_for, request, redirect, jsonify, Response, send_file
+from docx import Document
+
+
+from flask import Flask, render_template, url_for, request, redirect, jsonify, Response, send_file, session
 from flask_socketio import SocketIO
 
 from flask_wtf import FlaskForm
 from wtforms import FileField, SubmitField
 from werkzeug.utils import secure_filename
 import os
-
-
-
 
 
 
@@ -46,13 +46,15 @@ def content_shortener(content_shortener_model, prompts_obj, page_content):
 
     return chat_shorten_page_response, input_tokens, output_tokens
 
-
+def read_docx(file_path):
+    doc = Document(file_path)
+    text = "\n".join([paragraph.text for paragraph in doc.paragraphs]) 
+    return text
 
 def prepare_AI_Act_prompt(prompt_file, all_ai_use_cases):
 
-    # Read file content into a variable
-    with open(prompt_file, "r", encoding="utf-8") as file:
-        file_content = file.read()
+    # Read the Word document properly
+    file_content = read_docx(prompt_file)
 
     file_content += f"""Format your answer in this way:  
 AI Use Case: 
@@ -197,7 +199,7 @@ def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_s
 
     # Save the workbook
     unique_download_file = f"{uuid.uuid4().hex}.xlsx"
-    flask_files_dict["download_file"] = unique_download_file
+    session['download_file'] = unique_download_file
     output_wb.save(f"flask_results/{unique_download_file}")
 
 
@@ -226,7 +228,6 @@ socketio = SocketIO(app)
 app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
-flask_files_dict = {}
 
 ALLOWED_EXTENSIONS = {
     "file1": {"xlsx"},
@@ -264,11 +265,9 @@ def upload():
     if not allowed_file(file2.filename, "file2"):
         return jsonify({"error": "File 2 must be a Word (.docx) file"}), 400
 
-    # Generate unique filenames using UUID
     unique_filename1 = f"{uuid.uuid4().hex}_{secure_filename(file1.filename)}"
     unique_filename2 = f"{uuid.uuid4().hex}_{secure_filename(file2.filename)}"
 
-    # Save files
     upload_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'])
     os.makedirs(upload_dir, exist_ok=True)
 
@@ -278,61 +277,56 @@ def upload():
     file1.save(file1_path)
     file2.save(file2_path)
 
-    # Store unique filenames for future retrieval
-    flask_files_dict["startups_file"] = unique_filename1
-    flask_files_dict["prompt_file"] = unique_filename2
+    session['startups_file'] = unique_filename1
+    session['prompt_file'] = unique_filename2
 
-    return jsonify({
-        "message": "Files uploaded successfully!",
-        "files": {
-            "startups_file": unique_filename1,
-            "prompt_file": unique_filename2
-        }
-    })
+    return jsonify({"message": "Files uploaded successfully!"})
 
 
 import time
 
-def long_running_function():
+def long_running_function(startups_file, prompt_file):
     yield f"data: Processing started. Each startup website will be scraped. Please wait...\n\n"
     time.sleep(1)
 
-    sheet = load_startups_excel(f"uploads/{flask_files_dict['startups_file']}")
-    prompt_file = f"uploads/{flask_files_dict['prompt_file']}"
-
+    sheet = load_startups_excel(f"uploads/{startups_file}")
+    prompt_file_path = f"uploads/{prompt_file}"
 
     # Create the results file
     output_sheet, output_wb = create_results_file()
 
-    yield from prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, prompt_file=prompt_file)
+    yield from prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, prompt_file=prompt_file_path)
+
+    unique_download_file = f"{uuid.uuid4().hex}.xlsx"
+    session['download_file'] = unique_download_file
+    output_wb.save(f"flask_results/{unique_download_file}")
+
 
     yield "data: Processing complete!\n\n"
 
 
+
+
+
 @app.route('/run_process', methods=['GET'])
 def run_process():
-    return Response(long_running_function(), mimetype='text/event-stream')
+    startups_file = session.get("startups_file")
+    prompt_file = session.get("prompt_file")
+
+    if not startups_file or not prompt_file:
+        return jsonify({"error": "Session expired or files not uploaded"}), 400
+
+    return Response(long_running_function(startups_file, prompt_file), mimetype='text/event-stream')
 
 
 @app.route('/download')
 def download_file():
-    # file_path = os.path.join(os.getcwd(), "ai_use_cases.xlsx")
-    file_path = os.path.join(os.getcwd(), f"flask_results/{flask_files_dict['download_file']}")
+    file_path = os.path.join(os.getcwd(), f"flask_results/{session.get('download_file')}")
     return send_file(file_path, as_attachment=True)
 
 
 
-
 if __name__ == "__main__":
-    # # Load the startups excel
-    # sheet = load_startups_excel("to_classify.xlsx")
-
-    # # Create the results file
-    # output_sheet, output_wb = create_results_file()
-
-    # prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb)
-    
-    # # --- check page content extraction ---
 
     app.run(debug=True)
 

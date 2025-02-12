@@ -1,110 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Risk Classifier</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
 
-    <style>
-      button:disabled {
-        background: #ccc;
-        cursor: not-allowed;
-      }
-    </style>
-  </head>
+<body>
+    <div class="container">
+        <h2>Risk Classification Tool</h2>
+        
+        <form id="uploadForm" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
 
-  <body>
-    <h2>Risk Classification Tool</h2>
-    <form id="uploadForm" enctype="multipart/form-data">
-      {{ form.hidden_tag() }}
+            <div class="input-group">
+                <label for="file1">Upload Excel File (.xlsx only):</label>
+                <p class="instructions">
+                    The Excel file should have two columns:
+                    <br>- Column 1: Startup Names  
+                    <br>- Column 2: Website Links
+                    <br>The bot will start from the second row.
+                </p>
+                <input type="file" name="file1" id="file1" accept=".xlsx" required>
+            </div>
 
-      <label for="file1">Upload Excel File (.xlsx only):</label>
-      <p>The excel file should have two columns. The first column should have the startup names. The second column should have the website links</p>
-      <input type="file" name="file1" id="file1" accept=".xlsx" required /><br /><br />
+            <div class="input-group">
+                <label for="file2">Upload Word File (.docx only):</label>
+                <p class="instructions">
+                  The word file should describe which AI Use Cases (or AI Systems) fall under Prohibited, High Risk, Limited Risk and Minimal Risk according to the EU AI Act.
+                </p>
+                <p class="instructions">
+                  <strong>*Important: </strong>Please note that the bot attaches the following instruction right after your prompt defined in the uploaded file, to get answers in a structured format:
+                </p>
+                <div class="word-instructions">
+                  <p>
+                    <strong>Format your answer in this way:</strong><br><br>
+                    
+                    <strong>AI Use Case:</strong> <br>
+                    <strong>Use Case Description:</strong> <br>
+                    <strong>Risk Classification:</strong> <br>
+                    <strong>Reason:</strong>
+                    [Cite the relevant articles and annexes from the prompts above in your explanation] <br>
+                
+                    <strong>Confidence Level:</strong>
+                    [How confident are you in your current classification? Pick a value from 0-100%] <br>
+                
+                    <strong>Requires Additional Information:</strong>
+                    [If you have doubts about this classification, write Yes/No followed by what additional information is absolutely necessary without which you can't be sure about the classification] <br><br>
+                
+                    Do not give any intros or outros. The following are the AI Use Cases of the startup you have to classify using all of the above rules: <br>
+                    <i>{The AI Startup Use Cases will be listed here}</i>
+                </p>                
+                    
+                </div>
+                <input type="file" name="file2" id="file2" accept=".docx" required>
+            </div>
 
-      <label for="file2">Upload Word File (.docx only):</label>
-      <p>The word file should describe which AI Use Cases (or AI Systems) fall under Prohibited, High Risk, Limited Risk and Minimal Risk according to the EU AI Act. This bot attaches the following instruction right after your prompt:</p>
-      <p>
-        Format you answer in this way:  
-        AI Use Case: 
-        Use Case Description: 
-        Risk Classification: 
-        Reason: [Cite the relevant articles and annexes from the prompts above in your explanation]
-        Confidence Level: [How confident are you in your current classification? Pick a value from 0-100%]
-        Requires Additional Information: [If you have doubts about this classification, write Yes/No followed by what additional informtaion is absolutely necessary without which you can't be sure about the classification]
+            <button type="submit">Upload Files</button>
+        </form>
 
-        Do not give any intros or outros. The following are the AI Use cases of the startup you have to classify using all of the above rules:  
-        {`The AI Startup Use Cases will be listed here`}
-      </p>
-      <input type="file" name="file2" id="file2" accept=".docx" required /><br /><br />
+        <div id="response"></div>
 
-      <button type="submit">Upload Files</button>
-    </form>
-
-    <div id="response"></div>
-
-    <div class="output-container" style="margin-top: 50px">
-      <h2>Processing Logs:</h2>
-      <div id="output" style="background-color: #f5f5f5; padding: 10px; margin-top: 10px; border: 1px solid #ddd"></div>
-
-      <button id="downloadBtn" style="margin-top: 20px" disabled="true">Download File</button>
+        <div class="output-container">
+            <h2>Processing Logs</h2>
+            <div id="output"></div>
+            <button id="downloadBtn" disabled>Download File</button>
+        </div>
     </div>
 
     <script>
-      // Handle running the long process and streaming output
-      const outputs = () => {
-        $("#output").html(""); // Clear previous output
-        var eventSource = new EventSource("/run_process");
+        $(document).ready(function () {
+            function outputs() {
+                $("#output").html(""); // Clear previous output
+                var eventSource = new EventSource("/run_process");
 
-        eventSource.onmessage = function (event) {
-          $("#output").append("<p>" + event.data + "</p>");
+                eventSource.onmessage = function (event) {
+                    $("#output").append("<p>" + event.data + "</p>");
 
-          // Check if the last message contains "Processing complete!"
-          if (event.data.includes("Processing complete!")) {
-            $("#downloadBtn").prop("disabled", false);
-            eventSource.close(); // Close the stream when complete
-          }
-        };
+                    if (event.data.includes("Processing complete!")) {
+                        $("#downloadBtn").prop("disabled", false);
+                        eventSource.close();
+                    }
+                };
 
-        eventSource.onerror = function () {
-          eventSource.close();
-          $("#downloadBtn").prop("disabled", false); // Enable download button on error (to be safe)
-        };
-      };
+                eventSource.onerror = function () {
+                    eventSource.close();
+                    $("#downloadBtn").prop("disabled", false);
+                };
+            }
 
-      $("#downloadBtn").click(function () {
-        window.location.href = "/download";
-      });
+            $("#downloadBtn").click(function () {
+                window.location.href = "/download";
+            });
 
-      $(document).ready(function () {
-        // Handle file upload
-        $("#uploadForm").submit(function (event) {
-          event.preventDefault();
+            $("#uploadForm").submit(function (event) {
+                event.preventDefault();
+                var formData = new FormData();
+                formData.append("file1", $("#file1")[0].files[0]);
+                formData.append("file2", $("#file2")[0].files[0]);
 
-          var formData = new FormData();
-          formData.append("file1", $("#file1")[0].files[0]);
-          formData.append("file2", $("#file2")[0].files[0]);
-
-          $.ajax({
-            url: "/upload",
-            type: "POST",
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function (response) {
-              $("#response").html("<p style='color: green;'>" + response.message + "</p>");
-              $("#uploadForm :input").prop("disabled", true);
-              outputs();
-            },
-            error: function (xhr) {
-              var errorMsg = JSON.parse(xhr.responseText).error;
-              $("#response").html("<p style='color: red;'>" + errorMsg + "</p>");
-            },
-          });
+                $.ajax({
+                    url: "/upload",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        $("#response").html("<p class='success'>" + response.message + "</p>");
+                        $("#uploadForm :input").prop("disabled", true);
+                        outputs();
+                    },
+                    error: function (xhr) {
+                        var errorMsg = JSON.parse(xhr.responseText).error;
+                        $("#response").html("<p class='error'>" + errorMsg + "</p>");
+                    }
+                });
+            });
         });
-      });
     </script>
-  </body>
+</body>
 </html>
