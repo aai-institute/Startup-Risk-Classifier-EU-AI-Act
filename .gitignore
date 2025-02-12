@@ -2,6 +2,7 @@ custom-env/
 .env
 *.ipynb
 *.xlsx
+*.docx
 *.csv
 datasets/
 __pycache__/

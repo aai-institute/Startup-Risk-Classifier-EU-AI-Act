@@ -16,6 +16,7 @@ from docx import Document
 
 from flask import Flask, render_template, url_for, request, redirect, jsonify, Response, send_file, session
 from flask_socketio import SocketIO
+from flask_session import Session
 
 from flask_wtf import FlaskForm
 from wtforms import FileField, SubmitField
@@ -72,7 +73,7 @@ Do not give any intros or outros. The following are the AI Use cases of the star
 
 
 
-def prompt_approach(model_name, classification_model_name, content_shortener_model, sheet, output_sheet, output_wb, prompt_file):
+def prompt_approach(model_name, classification_model_name, content_shortener_model, sheet, output_sheet, output_wb, prompt_file, output_filename):
     # Initialize the objects
     web_scraper_obj = WebScraper()
 
@@ -140,7 +141,7 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
         # Update token cost
         web_scraper_obj.set_token_cost(input_tokens, output_tokens, classification_model_name)
 
-        save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, chat_links_response, all_ai_use_cases, eu_ai_act_response)
+        save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, chat_links_response, all_ai_use_cases, eu_ai_act_response, output_filename)
 
         # --- Finishing calls ---
         # Reset token cost, redirected URL
@@ -178,11 +179,10 @@ def extract_list(input_string):
     list_pattern = r"\[.*?\]"
     match = re.search(list_pattern, input_string)
     if match:
-        # Convert the matched string to a Python list
         return ast.literal_eval(match.group())
     return None
 
-def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, additional_urls, all_ai_use_cases, eu_ai_act_response):
+def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, additional_urls, all_ai_use_cases, eu_ai_act_response, output_filename):
     headers = ["Startup Name", "Homepage URL", "Redirected URL (for logging only)", "Additional URLs"] + [f"Page {i+1}" for i in range(TOTAL_PAGE_CRAWLS)] + ["EU AI Act Risk Classification", "Total Token Cost ($)"]
     # Write headers if not present
     # print(output_sheet.max_row)
@@ -197,10 +197,8 @@ def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_s
     row = [startup_name, raw_homepage_url, web_scraper_obj.get_redirected_url(), ", ".join(additional_urls)] + use_cases_padded[:TOTAL_PAGE_CRAWLS] + [eu_ai_act_response] + [web_scraper_obj.get_token_cost()]
     output_sheet.append(row)
 
-    # Save the workbook
-    unique_download_file = f"{uuid.uuid4().hex}.xlsx"
-    session['download_file'] = unique_download_file
-    output_wb.save(f"flask_results/{unique_download_file}")
+
+    output_wb.save(f"flask_results/{output_filename}")
 
 
 def extract_use_cases_from_response(use_cases_full_text):
@@ -228,6 +226,15 @@ socketio = SocketIO(app)
 app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
+
+# Configure session to use the filesystem instead of Redis
+app.config['SESSION_TYPE'] = 'filesystem'  # Stores session data in files
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_FILE_DIR'] = "flask_sessions"  # Folder to store sessions
+app.config['SESSION_USE_SIGNER'] = True  # Prevent tampering
+app.config['SESSION_KEY_PREFIX'] = 'risk_classification:'
+
+Session(app)
 
 ALLOWED_EXTENSIONS = {
     "file1": {"xlsx"},
@@ -267,6 +274,7 @@ def upload():
 
     unique_filename1 = f"{uuid.uuid4().hex}_{secure_filename(file1.filename)}"
     unique_filename2 = f"{uuid.uuid4().hex}_{secure_filename(file2.filename)}"
+    unique_filename3 = f"{uuid.uuid4().hex}.xlsx"
 
     upload_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'])
     os.makedirs(upload_dir, exist_ok=True)
@@ -279,31 +287,31 @@ def upload():
 
     session['startups_file'] = unique_filename1
     session['prompt_file'] = unique_filename2
+    session['download_file'] = unique_filename3
 
     return jsonify({"message": "Files uploaded successfully!"})
 
 
 import time
+from flask import copy_current_request_context
 
-def long_running_function(startups_file, prompt_file):
-    yield f"data: Processing started. Each startup website will be scraped. Please wait...\n\n"
-    time.sleep(1)
+def long_running_function(startups_file, prompt_file, output_filename):
+    @copy_current_request_context  
+    def process():
+        yield f"data: Processing started. Each startup website will be scraped. Please wait...\n\n"
+        time.sleep(1)
 
-    sheet = load_startups_excel(f"uploads/{startups_file}")
-    prompt_file_path = f"uploads/{prompt_file}"
+        sheet = load_startups_excel(f"uploads/{startups_file}")
+        prompt_file_path = f"uploads/{prompt_file}"
 
-    # Create the results file
-    output_sheet, output_wb = create_results_file()
+        # Create the results file
+        output_sheet, output_wb = create_results_file()
 
-    yield from prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, prompt_file=prompt_file_path)
+        yield from prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, prompt_file=prompt_file_path, output_filename=output_filename)
 
-    unique_download_file = f"{uuid.uuid4().hex}.xlsx"
-    session['download_file'] = unique_download_file
-    output_wb.save(f"flask_results/{unique_download_file}")
-
-
-    yield "data: Processing complete!\n\n"
-
+        yield "data: Processing complete!\n\n"
+        
+    return process()
 
 
 
@@ -312,23 +320,38 @@ def long_running_function(startups_file, prompt_file):
 def run_process():
     startups_file = session.get("startups_file")
     prompt_file = session.get("prompt_file")
+    output_filename = session.get("download_file")
+
+
 
     if not startups_file or not prompt_file:
         return jsonify({"error": "Session expired or files not uploaded"}), 400
 
-    return Response(long_running_function(startups_file, prompt_file), mimetype='text/event-stream')
+
+    return Response(long_running_function(startups_file, prompt_file, output_filename), mimetype='text/event-stream')
 
 
 @app.route('/download')
 def download_file():
-    file_path = os.path.join(os.getcwd(), f"flask_results/{session.get('download_file')}")
+    filename = session.get('download_file')
+
+    if not filename:
+        return jsonify({"error": "No file available for download"}), 400
+
+    file_path = os.path.join(os.getcwd(), f"flask_results/{filename}")
+
+    if not os.path.exists(file_path):
+        return jsonify({"error": "File not found"}), 404
+
     return send_file(file_path, as_attachment=True)
 
 
 
 if __name__ == "__main__":
 
-    app.run(debug=True)
+    # app.run(debug=True)
+    app.run(host="0.0.0.0", port=8000)
+
 
     # pass
 
