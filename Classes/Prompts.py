@@ -211,13 +211,13 @@ If you believe transparency obligations *do not apply* or are unsure:
 
 
 
-Format your final answer for each AI Use Case in this way only:
+Format you answer in this way:
 
 AI Use Case: 
 Use Case Description: 
 Risk Classification: 
-Reason: [Cite the relevant clauses from the instructions above in your explanation]
-Confidence Level: [How confident are you in your current classification? Pick a value from 0-100%]
+Reason: [Cite relevant annexes and clauses from the instructions above in your reasoning]
+Requires Additional Information: [If you have doubts about this classification, answer 'Yes' or 'No', followed by what additional informtaion was necessary to classify this use case]
 
 Do not give any intros or outros. The following are the AI Use cases of the startup you have to classify using all of the above rules:  
 {all_use_cases}

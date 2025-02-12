@@ -16,8 +16,9 @@ class Selenium():
 
 
         # Disable GPU
-        chrome_options.add_argument("--disable-gpu")  # Disables GPU acceleration
-        chrome_options.add_argument("--disable-software-rasterizer")  # Further prevents GPU issues
+        # chrome_options.add_argument("--disable-gpu")  # Disables GPU acceleration
+        # chrome_options.add_argument("--disable-software-rasterizer")  # Further prevents GPU issues
+        chrome_options.add_argument("--enable-webgl")
         # chrome_options.add_argument("--disable-dev-shm-usage")  # Prevent shared memory issues
 
         self.__driver = webdriver.Chrome(options=chrome_options)
