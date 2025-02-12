@@ -37,7 +37,7 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
     web_scraper_obj = WebScraper()
 
     # sheet.max_row + 1
-    for row in range(2, 20):
+    for row in range(8, sheet.max_row + 1):
         url = sheet.cell(row=row, column=2).value
         startup_name = sheet.cell(row=row, column=1).value
         
