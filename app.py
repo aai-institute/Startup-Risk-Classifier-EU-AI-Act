@@ -1,32 +1,35 @@
-from Classes import ChatGPT, Prompts, WebScraper, TextExtractor
-
-from openai import OpenAI
-import re
-import ast
-import openpyxl
-import uuid
-
-import time
+# Standard Library
 import os
-from dotenv import load_dotenv
-load_dotenv()
+import re
+import time
+import uuid
+import ast
 
+# Third-Party Library
+import openpyxl
 from docx import Document
+from dotenv import load_dotenv
+from openai import OpenAI
 
-
-from flask import Flask, render_template, url_for, request, redirect, jsonify, Response, send_file, session
+from flask import Flask, render_template,copy_current_request_context, request, jsonify, Response, send_file, session
 from flask_socketio import SocketIO
 from flask_session import Session
-
 from flask_wtf import FlaskForm
 from wtforms import FileField, SubmitField
+
 from werkzeug.utils import secure_filename
-import os
+import redis
 
+# Local Imports
+from Classes import ChatGPT, Prompts, WebScraper, TextExtractor
 
+# Load environment variables
+load_dotenv()
 
-
+# Constants
 TOTAL_PAGE_CRAWLS = 2
+
+
 
 def load_startups_excel(startups_file):
     sheet = openpyxl.load_workbook(startups_file)["Sheet1"]
@@ -57,15 +60,15 @@ def prepare_AI_Act_prompt(prompt_file, all_ai_use_cases):
     # Read the Word document properly
     file_content = read_docx(prompt_file)
 
-    file_content += f"""Format your answer in this way:  
+    file_content += f"""Format you answer in this way:
+
 AI Use Case: 
 Use Case Description: 
 Risk Classification: 
-Reason: [Cite the relevant articles and annexes from the prompts above in your explanation]
-Requires Additional Information: [If you have doubts about this classification, write Yes/No followed by what additional informtaion is absolutely necessary without which you can't be sure about the classification]
+Reason: [Cite relevant annexes and clauses from the instructions above in your reasoning]
+Requires Additional Information: [If you have doubts about this classification, answer 'Yes' or 'No', followed by what additional informtaion was necessary to classify this use case]
 
-Do not give any intros or outros. The following are the AI Use cases of the startup you have to classify using all of the above rules:  
-{all_ai_use_cases}
+Do not give any intros or outros. The following are the AI Use cases of the startup you have to classify using all of the above rules: {all_ai_use_cases}
 """
 
     # print(file_content)  # Output all content
@@ -185,10 +188,8 @@ def extract_list(input_string):
 def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, additional_urls, all_ai_use_cases, eu_ai_act_response, output_filename):
     headers = ["Startup Name", "Homepage URL", "Redirected URL (for logging only)", "Additional URLs"] + [f"Page {i+1}" for i in range(TOTAL_PAGE_CRAWLS)] + ["EU AI Act Risk Classification", "Total Token Cost ($)"]
     # Write headers if not present
-    # print(output_sheet.max_row)
-    if output_sheet.max_row == 1:
-        for col_num, header in enumerate(headers, start=1):
-            output_sheet.cell(row=1, column=col_num, value=header)
+    if output_sheet.max_row < 2:
+        output_sheet.append(headers)
 
     # Ensure all_ai_use_cases is padded to match the maximum number of columns
     use_cases_padded = all_ai_use_cases + [""] * (TOTAL_PAGE_CRAWLS - len(all_ai_use_cases))
@@ -226,14 +227,14 @@ socketio = SocketIO(app)
 app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
-import redis
-
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'risk_classification:'
 app.config['SESSION_REDIS'] = redis.StrictRedis(host='redis', port=6379, db=0, decode_responses=False, encoding='utf-8', encoding_errors='replace')
 app.config['WTF_CSRF_ENABLED'] = True
+app.config["SESSION_PERMANENT"] = True
+app.config["PERMANENT_SESSION_LIFETIME"] = 1800  # 30 minutes
 
 Session(app)
 
@@ -248,7 +249,9 @@ class UploadFileForm(FlaskForm):
     submit = SubmitField('Upload Files')
 
 def allowed_file(filename, file_type):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS[file_type]
+    ext = filename.rsplit('.', 1)[-1].lower()
+    return ext in ALLOWED_EXTENSIONS.get(file_type, set())
+
 
 @app.route('/', methods=['GET'])
 def index():
@@ -275,7 +278,7 @@ def upload():
 
     unique_filename1 = f"{uuid.uuid4().hex}_{secure_filename(file1.filename)}"
     unique_filename2 = f"{uuid.uuid4().hex}_{secure_filename(file2.filename)}"
-    unique_filename3 = f"{uuid.uuid4().hex}.xlsx"
+    unique_filename3 = f"{session.sid}.xlsx"
 
     upload_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'])
     os.makedirs(upload_dir, exist_ok=True)
@@ -293,8 +296,7 @@ def upload():
     return jsonify({"message": "Files uploaded successfully!"})
 
 
-import time
-from flask import copy_current_request_context
+
 
 def long_running_function(startups_file, prompt_file, output_filename):
     @copy_current_request_context  
@@ -349,12 +351,8 @@ def download_file():
 
 
 if __name__ == "__main__":
-
     # app.run(debug=True)
     app.run(host="0.0.0.0", port=8000)
-
-
-    # pass
 
 
 

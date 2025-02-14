@@ -9,8 +9,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    # volumes:
-    #   - .:/app
+    volumes:
+      - .:/app
     depends_on:
       - redis
     environment:
@@ -23,8 +23,8 @@ services:
     image: "redis:8.0-M03-alpine"
     restart: always
     command: ["redis-server", "--appendonly", "yes"] 
-    # volumes:
-    #   - redis-data:/data
+    volumes:
+      - redis-data:/data
     
 
 volumes:
