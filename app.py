@@ -226,13 +226,14 @@ socketio = SocketIO(app)
 app.config['SECRET_KEY'] = 'mysecretkey'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
+import redis
 
-# Configure session to use the filesystem instead of Redis
-app.config['SESSION_TYPE'] = 'filesystem'  # Stores session data in files
+app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False
-app.config['SESSION_FILE_DIR'] = "flask_sessions"  # Folder to store sessions
-app.config['SESSION_USE_SIGNER'] = True  # Prevent tampering
+app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'risk_classification:'
+app.config['SESSION_REDIS'] = redis.StrictRedis(host='redis', port=6379, db=0, decode_responses=False, encoding='utf-8', encoding_errors='replace')
+app.config['WTF_CSRF_ENABLED'] = True
 
 Session(app)
 

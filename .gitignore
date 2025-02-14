@@ -1,4 +1,5 @@
 custom-env/
+new-env/
 .env
 *.ipynb
 *.xlsx
