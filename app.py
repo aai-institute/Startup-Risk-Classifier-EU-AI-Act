@@ -278,7 +278,7 @@ def upload():
 
     unique_filename1 = f"{uuid.uuid4().hex}_{secure_filename(file1.filename)}"
     unique_filename2 = f"{uuid.uuid4().hex}_{secure_filename(file2.filename)}"
-    unique_filename3 = f"{session.sid}.xlsx"
+    unique_filename3 = f"{uuid.uuid4().hex}.xlsx"
 
     upload_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'])
     os.makedirs(upload_dir, exist_ok=True)
