@@ -64,7 +64,7 @@ def prepare_AI_Act_prompt(prompt_file, all_ai_use_cases):
 
 AI Use Case: 
 Use Case Description: 
-Risk Classification: 
+Risk Classification: ["Prohibited", "High-risk with transparency obligations", "High-risk", "System with transparency obligations", "Low-risk"]
 Reason: [Cite relevant annexes and clauses from the instructions above in your reasoning]
 Requires Additional Information: [If you have doubts about this classification, answer 'Yes' or 'No', followed by what additional informtaion was necessary to classify this use case]
 
@@ -136,15 +136,25 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
 
         # Prompt based approach for the EU AI Act
         eu_ai_act_prompt = prepare_AI_Act_prompt(prompt_file, all_ai_use_cases)
-
         eu_ai_act_obj = ChatGPT(classification_model_name, eu_ai_act_prompt, [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
         eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
-        # print(f"EU AI Act Response: {eu_ai_act_response}")
-
         # Update token cost
         web_scraper_obj.set_token_cost(input_tokens, output_tokens, classification_model_name)
 
-        save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, chat_links_response, all_ai_use_cases, eu_ai_act_response, output_filename)
+
+        # Parse the highest risk classification
+        risk_parse_obj = ChatGPT("gpt-4o", prompts_obj.get_highest_risk(eu_ai_act_response), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+        risk_parse_response, input_tokens, output_tokens = risk_parse_obj.risk_classification_structured_chat()
+        # Update token cost
+        web_scraper_obj.set_token_cost(input_tokens, output_tokens, "gpt-4o")
+
+        risk_parse_response = json.loads(risk_parse_response)
+        highest_risk_classification = risk_parse_response["highest_risk_classification"]
+        requires_additional_information = risk_parse_response["requires_additional_information"]
+        what_additional_information = risk_parse_response["what_additional_information"]
+
+
+        save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, chat_links_response, all_ai_use_cases, eu_ai_act_response, highest_risk_classification, requires_additional_information, what_additional_information, output_filename)
 
         # --- Finishing calls ---
         # Reset token cost, redirected URL
@@ -185,8 +195,8 @@ def extract_list(input_string):
         return ast.literal_eval(match.group())
     return None
 
-def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, additional_urls, all_ai_use_cases, eu_ai_act_response, output_filename):
-    headers = ["Startup Name", "Homepage URL", "Redirected URL (for logging only)", "Additional URLs"] + [f"Page {i+1}" for i in range(TOTAL_PAGE_CRAWLS)] + ["EU AI Act Risk Classification", "Total Token Cost ($)"]
+def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, additional_urls, all_ai_use_cases, eu_ai_act_response, highest_risk_classification, requires_additional_information, what_additional_information, output_filename):
+    headers = ["Startup Name", "Homepage URL", "Redirected URL (for logging only)", "Additional URLs"] + [f"Page {i+1}" for i in range(TOTAL_PAGE_CRAWLS)] + ["EU AI Act Risk Classification", "Highest Risk Classification", "Requires Additional Information", "What Additional Information", "Total Token Cost ($)"]
     # Write headers if not present
     if output_sheet.max_row < 2:
         output_sheet.append(headers)
@@ -195,11 +205,11 @@ def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_s
     use_cases_padded = all_ai_use_cases + [""] * (TOTAL_PAGE_CRAWLS - len(all_ai_use_cases))
 
     # Write data
-    row = [startup_name, raw_homepage_url, web_scraper_obj.get_redirected_url(), ", ".join(additional_urls)] + use_cases_padded[:TOTAL_PAGE_CRAWLS] + [eu_ai_act_response] + [web_scraper_obj.get_token_cost()]
+    row = [startup_name, raw_homepage_url, web_scraper_obj.get_redirected_url(), ", ".join(additional_urls)] + use_cases_padded[:TOTAL_PAGE_CRAWLS] + [eu_ai_act_response, highest_risk_classification, requires_additional_information, what_additional_information, web_scraper_obj.get_token_cost()]
     output_sheet.append(row)
 
 
-    output_wb.save(f"flask_results/{output_filename}")
+    output_wb.save(f"user_downloads/{output_filename}")
 
 
 def extract_use_cases_from_response(use_cases_full_text):
@@ -218,14 +228,11 @@ def extract_use_cases_from_response(use_cases_full_text):
 
 
 
-
-
-
 app = Flask(__name__)
 socketio = SocketIO(app)
 
 app.config['SECRET_KEY'] = 'mysecretkey'
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = 'user_uploads'
 
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False
@@ -298,14 +305,14 @@ def upload():
 
 
 
-def long_running_function(startups_file, prompt_file, output_filename):
+def flask_web_scraper_runner(startups_file, prompt_file, output_filename):
     @copy_current_request_context  
     def process():
         yield f"data: Processing started. Each startup website will be scraped. Please wait...\n\n"
         time.sleep(1)
 
-        sheet = load_startups_excel(f"uploads/{startups_file}")
-        prompt_file_path = f"uploads/{prompt_file}"
+        sheet = load_startups_excel(f"user_uploads/{startups_file}")
+        prompt_file_path = f"user_uploads/{prompt_file}"
 
         # Create the results file
         output_sheet, output_wb = create_results_file()
@@ -325,13 +332,11 @@ def run_process():
     prompt_file = session.get("prompt_file")
     output_filename = session.get("download_file")
 
-
-
     if not startups_file or not prompt_file:
         return jsonify({"error": "Session expired or files not uploaded"}), 400
 
 
-    return Response(long_running_function(startups_file, prompt_file, output_filename), mimetype='text/event-stream')
+    return Response(flask_web_scraper_runner(startups_file, prompt_file, output_filename), mimetype='text/event-stream')
 
 
 @app.route('/download')
@@ -341,19 +346,28 @@ def download_file():
     if not filename:
         return jsonify({"error": "No file available for download"}), 400
 
-    file_path = os.path.join(os.getcwd(), f"flask_results/{filename}")
+    file_path = os.path.join(os.getcwd(), f"user_downloads/{filename}")
 
     if not os.path.exists(file_path):
         return jsonify({"error": "File not found"}), 404
 
     return send_file(file_path, as_attachment=True)
 
-
+import json
 
 if __name__ == "__main__":
     # app.run(debug=True)
     app.run(host="0.0.0.0", port=8000)
 
+    # prompt_obj = Prompts(4)
+    # prompt = prompt_obj.get_highest_risk(example_classifications)
+
+    # chat_obj = ChatGPT("gpt-4o", prompt, [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+    # response, input_tokens, output_tokens = chat_obj.risk_classification_structured_chat()
+    # response = json.loads(response)
+
+
+    
 
 
 

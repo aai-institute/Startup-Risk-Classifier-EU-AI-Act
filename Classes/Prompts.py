@@ -22,6 +22,34 @@ class Prompts():
         
         return important_links
     
+    def get_highest_risk(self, all_use_cases):
+        highest_risk = f"""What is the highest 'Risk Classification' mentioned in these risk classifications:
+
+{all_use_cases}
+
+The order of risk classification for this task from highest to lowest is:
+1) Prohibited AI system
+2) High-risk AI system with transparency obligations
+3) High-risk AI system
+4) System with transparency obligations
+5) Low-risk AI system
+6) None
+
+Identify the highest risk classification present in the input. If multiple risk classifications have the same highest level, return the one that appears **first in the list above** and does **not** have 'Requires Additional Information' as 'Yes'. If no risk classifications are present, return 'None'.
+
+Return the result in the following **strict JSON format** and **do not include any other text outside the JSON object**:
+
+{{
+  "highest_risk_classification": "<The highest risk classification>",
+  "requires_additional_information": "<Yes or No>",
+  "what_additional_information": "<Provide the reason mentioned in the text if additional information is required; otherwise, return null>"
+}}
+"""
+
+        return highest_risk
+    
+
+
     def eu_ai_act_prompt(self, all_use_cases):
         eu_ai_act = f"""
         You are an expert lawyer who is intimately familiar with the European Union's Artificial Intelligence (EU AI) Act. 
