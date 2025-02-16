@@ -236,17 +236,17 @@ def extract_use_cases_from_response(use_cases_full_text):
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-app.config['SECRET_KEY'] = 'mysecretkey'
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
 app.config['UPLOAD_FOLDER'] = 'user_uploads'
 
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True
 app.config['SESSION_KEY_PREFIX'] = 'risk_classification:'
-app.config['SESSION_REDIS'] = redis.StrictRedis(host='redis', port=6379, db=0, decode_responses=False, encoding='utf-8', encoding_errors='replace')
+app.config['SESSION_REDIS'] = redis.StrictRedis(host=os.getenv("REDIS_HOST"), port=int(os.getenv("REDIS_PORT", 6379)), db=0, password=os.getenv('REDIS_PASSWORD'), decode_responses=False)
 app.config['WTF_CSRF_ENABLED'] = True
-app.config["SESSION_PERMANENT"] = True
-app.config["PERMANENT_SESSION_LIFETIME"] = 1800  # 30 minutes
+
+
 
 Session(app)
 
@@ -380,7 +380,6 @@ def download_file():
 import json
 
 if __name__ == "__main__":
-    # app.run(debug=True)
     app.run(host="0.0.0.0", port=8000)
 
     # prompt_obj = Prompts(4)

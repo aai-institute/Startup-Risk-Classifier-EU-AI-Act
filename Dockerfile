@@ -7,7 +7,7 @@ COPY requirements.txt .
 
 # Run the required commands
 RUN apt-get update -y && apt-get upgrade -y && \
-apt-get install wget -y && \
+apt-get install -y wget nano && \
 mkdir -p ~/Google_Chrome && \
 wget -P ~/Google_Chrome https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
 apt install ~/Google_Chrome/google-chrome-stable_current_amd64.deb -y && \
