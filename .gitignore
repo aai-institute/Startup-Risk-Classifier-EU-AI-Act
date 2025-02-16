@@ -4,6 +4,7 @@ new-env/
 *.xlsx
 *.docx
 *.csv
+*.pyc
 datasets/
 __pycache__/
 Previous Results/
