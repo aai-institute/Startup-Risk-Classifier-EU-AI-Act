@@ -1,6 +1,6 @@
 from Classes.LinkWorker import LinkWorker
 from selenium.common.exceptions import TimeoutException
-
+import re
 
 class WebScraper(LinkWorker):
     def __init__(self):
@@ -20,6 +20,10 @@ class WebScraper(LinkWorker):
         elif model_name == "o3-mini":
             input_cost = (input_tokens / 1000) * 0.0011
             output_cost = (output_tokens / 1000) * 0.0044
+            self.__total_token_cost += input_cost + output_cost
+        elif model_name == "gpt-4o":
+            input_cost = (input_tokens / 1000) * 0.0025
+            output_cost = (output_tokens / 1000) * 0.01
             self.__total_token_cost += input_cost + output_cost
         else:
             raise ValueError("Model name not recognized. Token cost not calculated.")
@@ -63,7 +67,7 @@ class WebScraper(LinkWorker):
             print(f"Page load timeout: {self.__url}. Stopping page load.")
             self.__driver.execute_script("window.stop();")  # Stop the loading
         except Exception as e:
-            print(f"Error opening URL {self.__url}. Reason: {e}.")
+            print(f"Error opening URL {self.__url}")
             return 0 # General Error
 
     def quit_driver(self):
@@ -99,4 +103,5 @@ class WebScraper(LinkWorker):
     def get_page_links(self):
         page_links = self.scrape_page_links(self.__url)
         return page_links
+
 

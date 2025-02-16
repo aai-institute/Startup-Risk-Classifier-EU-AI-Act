@@ -22,176 +22,59 @@ class Prompts():
         
         return important_links
     
+    def get_highest_risk(self, all_use_cases):
+        highest_risk = f"""What is the highest 'Risk Classification' mentioned in these risk classifications:
+
+{all_use_cases}
+
+The order of risk classification for this task from highest to lowest is:
+1) Prohibited AI system
+2) High-risk AI system with transparency obligations
+3) High-risk AI system
+4) System with transparency obligations
+5) Low-risk AI system
+
+Identify the highest **exact** risk classification **as stated in the text**. Do not modify, simplify, or generalize the classification. 
+
+If multiple risk classifications have the same highest level, return the one that appears **first in the list above** and does **not** have 'Requires Additional Information' as 'Yes'.
+
+If no valid risk classification is present in the given text, return 'None' for 'highest_risk_classification' and **empty strings for all the other fields** in the output JSON object.
+
+Return the result in the following **strict JSON format** and **do not include any other text outside the JSON object**:
+
+{{
+  "highest_risk_classification": "<Extract the exact wording of the highest risk classification from the text>",
+  "requires_additional_information": "<Yes or No>",
+  "what_additional_information": "<Provide the reason mentioned in the text if additional information is required. Otherwise, return an empty string>"
+}}
+"""
+
+        return highest_risk
+    
+
+
     def eu_ai_act_prompt(self, all_use_cases):
-        eu_ai_act = f"""You are an expert lawyer who is intimately familiar with the European Union's Artificial Intelligence (EU AI) Act. 
+        eu_ai_act = f"""
+        You are an expert lawyer who is intimately familiar with the European Union's Artificial Intelligence (EU AI) Act. 
 
 Please classify a given AI use case into the following categories based on the EU AI Act's risk classification rules: 
 
-1) Prohibited AI systems  
-2) High-risk AI systems  
+1) Prohibited  
+2) High-risk  
 3) Systems with transparency obligations  
-4) High-risk AI system with transparency obligations  
-5) Low-risk AI systems
+4) Low-risk
 
-During this analysis, do not hallucinate facts, do not make the classification based on your assumptions about these risk classes, and rely only on the information provided in the prompts (unless specifically instructed to rely on your training data). 
+During this analysis, do not hallucinate facts, do not make the classification based on your assumptions about these risk classes, and rely only on the information provided in the prompts. 
 
 Please perform this classification in the following manner: 
 
-Step 1: Check if the AI system is prohibited based on the information contained in the following:
+
+Step 1: Check if the AI Use Case is high-risk based on the following information:
+
 '''
-I need help determining if my AI use case is prohibited under the EU AI Act. Please analyze it against each of the following prohibitions:
+To help determine if the AI Use Case is classified as high-risk under the EU AI Act, please analyze the following information:
 
-A) Article 5(1)(a) \- Harmful Manipulation and Deception Conditions:
-
-* Must involve placing on market, putting into service or use of an AI system  
-* System must deploy subliminal techniques beyond consciousness OR purposefully manipulative OR deceptive techniques  
-* Must have objective/effect of materially distorting behavior  
-* Must cause/be reasonably likely to cause significant harm
-
-Key definitions:
-
-* Subliminal techniques: operate beyond conscious awareness  
-* Significant harm: includes physical, psychological, financial harm  
-* Material distortion: substantial impact on behavior, not minor influence
-
-Examples:
-
-* AI chatbot promoting self-harm  
-* AI system using hidden emotional manipulation to drive addiction  
-* AI using subliminal messaging to influence purchasing decisions
-
-B) Article 5(1)(b) \- Harmful Exploitation of Vulnerabilities Conditions:
-
-* Must involve placing on market, putting into service or use of an AI system  
-* System must exploit vulnerabilities due to:  
-  * Age  
-  * Disability  
-  * Specific social/economic situation  
-* Must have objective/effect of materially distorting behavior  
-* Must cause/be reasonably likely to cause significant harm
-
-Key definitions:
-
-* Vulnerabilities: cognitive, emotional, physical susceptibilities  
-* Social/economic situation: includes poverty, minority status, migration status
-
-Examples:
-
-* AI system targeting elderly with deceptive financial scams  
-* AI exploiting children's vulnerabilities through addictive design  
-* AI targeting socially disadvantaged groups with predatory loans
-
-C) Article 5(1)(c) \- Social Scoring Conditions:
-
-* Must involve placing on market, putting into service or use of an AI system  
-* Must evaluate/classify persons based on social behavior or personal characteristics over time  
-* Must lead to either:  
-  * Detrimental treatment in unrelated social contexts OR  
-  * Unjustified/disproportionate treatment
-
-Key definitions:
-
-* Social behavior: actions, habits, interactions in society  
-* Personal characteristics: demographic info, preferences, behaviors
-
-Examples:
-
-* Government system scoring citizens across multiple contexts affecting access to services  
-* AI system using unrelated social data to determine access to benefits  
-* System using social media behavior to restrict access to essential services
-
-D) Article 5(1)(d) \- Individual Crime Risk Assessment Conditions:
-
-* Must involve placing on market, putting into service or use of an AI system  
-* Must assess/predict risk of person committing crime  
-* Must be based solely on:  
-  * Profiling OR  
-  * Personality trait assessment
-
-Key definitions:
-
-* Profiling: automated processing to evaluate personal aspects  
-* Crime prediction: forward-looking assessment of future crimes
-
-Examples:
-
-* AI system predicting crime risk based only on personality traits  
-* System assessing likelihood of offending based purely on profiling
-
-E) Article 5(1)(e) \- Untargeted Facial Image Scraping Conditions:
-
-* Must involve placing on market, putting into service or use of an AI system  
-* Must create/expand facial recognition databases  
-* Must use untargeted scraping  
-* Must scrape from internet or CCTV footage
-
-Key definitions:
-
-* Untargeted scraping: indiscriminate collection without specific focus  
-* Facial recognition database: collection for matching facial images
-
-F) Article 5(1)(f) \- Emotion Recognition Conditions:
-
-* Must involve placing on market, putting into service or use of an AI system  
-* Must infer emotions  
-* Must be used in:  
-  * Workplace OR  
-  * Educational institutions  
-* Exception: medical or safety reasons
-
-Key definitions:
-
-* Emotion recognition: identifying/inferring emotions from biometric data  
-* Workplace: any physical/virtual work space
-
-G) Article 5(1)(g) \- Biometric Categorization Conditions:
-
-* Must involve placing on market, putting into service or use of AI system  
-* Must categorize individuals based on biometric data  
-* Must deduce/infer:  
-  * Race  
-  * Political opinions  
-  * Trade union membership  
-  * Religious/philosophical beliefs  
-  * Sex life/orientation
-
-H) Article 5(1)(h) \- Real-time Remote Biometric Identification Conditions:
-
-* Must be use of real-time RBI system  
-* Must be in publicly accessible spaces  
-* Must be for law enforcement  
-* Exceptions for:  
-  * Specific victim searches  
-  * Prevention of threats  
-  * Criminal suspect identification
-'''
-
-If you believe it is prohibited, please: 
-
-- Return the risk classification as “Prohibited”  
-- Return the rationale along with a citation for which clause you believe applies  
-- Terminate the analysis here. 
-
-If you are *unsure* if it is prohibited: 
-
-- Return the risk classification as “Unsure, potentially prohibited”
-
-If you believe it is *not* prohibited, please continue to Step 2:
-
-
-Step 2: Check if the AI system is high-risk based on the information contained in the following:
-'''
-To help determine if my AI system is classified as high-risk under the EU AI Act, please analyze the following information:
-
-There are two types of high-risk systems under the AI Act: 
-
-Annex I High Risk: AI systems that are safety components of products or are themselves products covered by Union harmonization legislation listed in Annex I AND must undergo third-party conformity assessment under that legislation; and
-
-Annex III High Risk: Standalone AI systems that fall into one of the use cases listed in Annex III
-
-Please analyse the use case against both types of classification rules sequentially: 
-
-1\. Product/Component Assessment (Annex I high-risk):
+1\. Product/Component Assessment:
 
 First, understand if the system is a "safety component":: 
 
@@ -199,11 +82,15 @@ A component is considered a "safety component" if EITHER:
 \- It fulfills a safety function for a product or system OR   
 \- Its failure or malfunctioning endangers the health and safety of persons 
 
+Examples of safety components:   
+\- Systems monitoring water pressure in critical infrastructure   
+\- Fire alarm controlling systems in computing centers   
+\- Components that directly protect physical integrity of infrastructure   
+\- Components that protect health and safety of persons and property 
+
 Note: Components used solely for cybersecurity purposes are NOT considered safety components.
 
 Then, check if the AI system is a product, or safety component of a product, covered by any of these Union harmonization laws under Annex I of the AI Act:
-
-\[Note: As an exception to the rule stated earlier in the prompt, you are allowed to rely on your training data to understand if the system is either a product or a safety component and whether it has to undergo a third party conformity assessment under that legislation. However, do not hallucinate facts\]
 
 Section A (New Legislative Framework): 
 
@@ -227,11 +114,10 @@ Section B:
 * Agricultural/Forestry Vehicles Regulation (167/2013)   
 *  Marine Equipment Directive (2014/90/EU)   
 * Rail System Interoperability Directive (2016/797)   
-* Motor Vehicles  Market Surveillance Regulations (2018/858)  and Motor Vehicles Type Approval Regulation (2019/2144)     
+* Motor Vehicles Regulation (2018/858)   
 * Civil Aviation/EASA Regulation (2018/1139) 
 
-2\. Standalone System Assessment (Annex III high-risk):
-
+2\. Standalone System Assessment:  
 Does the system's purpose align with any of these areas in Annex III of the AI Act:
 
 a) Biometric Identification & Categorization:  
@@ -242,10 +128,7 @@ a) Biometric Identification & Categorization:
 
 b) Critical Infrastructure:  
 \- Safety components in management/operation of critical digital infrastructure  
-\- Safety components in management/operation of critical infrastructure like road traffic, water/gas/heating/electricity supply  
-\- Additional explanation: Safety components of critical infrastructure, including critical digital infrastructure, are systems used to directly protect the physical integrity of critical infrastructure or health and safety of persons and property but which are not necessary in order for the system to function.  
-\-Additional explanation: This would not cover safety components in vehicles, for example.   
-\- Example: Systems for monitoring water pressure or fire alarm controlling systems in cloud computing centres are high risk  
+\- Safety components in road traffic, water/gas/heating/electricity supply  
 (Note: Excludes cybersecurity-only systems)
 
 c) Education/Training:  
@@ -262,7 +145,7 @@ d) Employment/Worker Management:
 
 e) Essential Services Access:  
 \- Public assistance benefit evaluation systems  
-\- Creditworthiness assessment systems (Note: This does *not* include AI systems used for the purpose of detecting financial fraud)  
+\- Creditworthiness assessment systems  
 \- Life/health insurance risk assessment systems  
 \- Emergency service dispatch/prioritization systems
 
@@ -311,28 +194,12 @@ d) Preparatory Tasks:
 Important: These exceptions do not apply if the system performs profiling of natural persons.  
 '''
 
-If you believe it is high-risk, please:
 
-- Please assess whether it is high risk system under Annex I or Annex III sequentially  
-  - If you believe it is high risk under Annex I:  
-    - Please return “High Risk, Annex I”  
-    - (If this information is in your training data) Please return your rationale for which clause under the relevant Annex I legislation applies  
-  - If you are not sure if it is high risk under Annex I:  
-    - Please return “Unsure, potentially High Risk, Annex I”   
-  - If it is not high risk under Annex I  
-    - Please check if it is high risk under Annex III:  
-      - If you believe it is high-risk under Annex III:  
-        - Please return “High Risk, Annex III”  
-        - Please return your rationale for which clause under Annex III applies  
-      - If you are not sure if it is high risk under Annex III:  
-        - Please return “Unsure, potentially High Risk, Annex III”  
-      - If it is not high risk under Annex III  
-        - Continue to step 3
 
-        
-Step 3: Check if additional transparency obligations apply to the system based on the information:   
-''' 
-To help determine if my AI system is classified as having transparency obligations under the EU AI Act, please analyze the following information:
+Step 2: Check if additional transparency obligations apply to the AI Use Case based on the following information  
+
+'''  
+To help determine if the AI Use Case is classified as having transparency obligations under the EU AI Act, please analyze the following information:
 
 Key Categories Requiring Transparency:
 
@@ -361,30 +228,22 @@ Key Categories Requiring Transparency:
 * Exception: Creative/artistic/satirical content (requires different disclosure approach)  
 * Exception: AI-generated text that undergoes human review/editorial control  
 * Example: AI-generated videos of real people
+
 '''
 
-If you believe transparency obligations apply, please:
+If you believe transparency obligations apply, please do the following:
 
-- Return the rationale along with a citation for which clause you believe applies  
 - If the system was also high-risk based on the previous step, please return: “high-risk and transparency obligations”  
 - Terminate the analysis here
 
-If you are unsure if transparency obligations apply, and
+If you believe transparency obligations *do not apply* or are unsure: 
 
-- It is high risk  
-  - Return “High Risk, Unsure, Transparency Obligations”  
-- If it is not high risk  
-  - Return “Unsure, Transparency obligations”  
-- If you are also unsure about the high risk classification:  
-  - Return “Unsure, High Risk and Transparency Obligations”
-
-If you believe transparency obligations *do not apply*: 
-
-- Return “low-risk”  
-- Return the rationale
+- Return “low-risk”
 
 
-Format you answer in this way:  
+
+Format you answer in this way:
+
 AI Use Case: 
 Use Case Description: 
 Risk Classification: 
@@ -394,9 +253,13 @@ Requires Additional Information: [If you have doubts about this classification, 
 Do not give any intros or outros. The following are the AI Use cases of the startup you have to classify using all of the above rules:  
 {all_use_cases}
         """
+
         # print(eu_ai_act)
         # eu_ai_act_without_prompt = f"For each of the following AI use cases, classify them according to the EU AI Act. Format you answer in this way:\n\nAI Use Case:\nContextual Considerations:\nRisk Classification:\nReason:\n\n{all_use_cases}"
         # print(eu_ai_act_without_prompt)
         return eu_ai_act
 
 
+
+
+# Requires Additional Information: [If you have doubts about this classification, write 'Yes or No' followed by what additional informtaion is absolutely necessary without which you can't be sure about the classification]
