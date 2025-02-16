@@ -1,0 +1,5 @@
+{
+    "prettier.bracketSameLine": true,
+    "html.format.wrapLineLength": 120,
+    "prettier.printWidth": 350
+}

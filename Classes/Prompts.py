@@ -22,150 +22,244 @@ class Prompts():
         
         return important_links
     
+    def get_highest_risk(self, all_use_cases):
+        highest_risk = f"""What is the highest 'Risk Classification' mentioned in these risk classifications:
+
+{all_use_cases}
+
+The order of risk classification for this task from highest to lowest is:
+1) Prohibited AI system
+2) High-risk AI system with transparency obligations
+3) High-risk AI system
+4) System with transparency obligations
+5) Low-risk AI system
+
+Identify the highest **exact** risk classification **as stated in the text**. Do not modify, simplify, or generalize the classification. 
+
+If multiple risk classifications have the same highest level, return the one that appears **first in the list above** and does **not** have 'Requires Additional Information' as 'Yes'.
+
+If no valid risk classification is present in the given text, return 'None' for 'highest_risk_classification' and **empty strings for all the other fields** in the output JSON object.
+
+Return the result in the following **strict JSON format** and **do not include any other text outside the JSON object**:
+
+{{
+  "highest_risk_classification": "<Extract the exact wording of the highest risk classification from the text>",
+  "requires_additional_information": "<Yes or No>",
+  "what_additional_information": "<Provide the reason mentioned in the text if additional information is required. Otherwise, return an empty string>"
+}}
+"""
+
+        return highest_risk
+    
+
+
     def eu_ai_act_prompt(self, all_use_cases):
-        eu_ai_act = f"""You are an AI expert tasked with performing risk classification assessments for AI startups and their use cases according to the EU AI Act. Your goal is to categorize AI systems into the appropriate risk level based on the information provided. Here's how to conduct the assessment:
-        
-## Risk Categories
+        eu_ai_act = f"""
+        You are an expert lawyer who is intimately familiar with the European Union's Artificial Intelligence (EU AI) Act. 
 
-Classify AI systems into one of four risk categories:
+Please classify a given AI use case into the following categories based on the EU AI Act's risk classification rules: 
 
-1. Unacceptable Risk (Prohibited)  
-2. High Risk  
-3. Limited Risk  
-4. Minimal Risk
+1) Prohibited  
+2) High-risk  
+3) Systems with transparency obligations  
+4) Low-risk
 
-## Category Definitions and Examples
+During this analysis, do not hallucinate facts, do not make the classification based on your assumptions about these risk classes, and rely only on the information provided in the prompts. 
 
-## 1\. Unacceptable Risk (Prohibited)
+Please perform this classification in the following manner: 
 
-AI systems in this category are banned in the EU due to their potential threat to individuals and society. These include:
 
-* Social scoring systems by governments  
-* AI manipulating vulnerable groups  
-* Real-time and remote biometric identification (e.g., facial recognition) in public spaces, except for specific law enforcement purposes with court approval  
-* AI systems using subliminal or manipulative techniques to distort behavior  
-* AI exploiting vulnerabilities related to age, disability, or socio-economic circumstances  
-* Biometric categorization systems inferring sensitive attributes (e.g., race, political opinions, religious beliefs, sexual orientation)  
-* AI for assessing an individual's risk of committing criminal offenses
+Step 1: Check if the AI Use Case is high-risk based on the following information:
 
-## 2\. High Risk
+'''
+To help determine if the AI Use Case is classified as high-risk under the EU AI Act, please analyze the following information:
 
-AI systems that could significantly impact safety, fundamental rights, or the environment.
+1\. Product/Component Assessment:
 
-1. Is the AI system intended to be used as a safety component of a product, or is it a product itself, covered by EU harmonization legislation listed in Annex I of the AI Act?  
-2. If yes to point 1, is the product required to undergo a third-party conformity assessment?  
-3. Does the AI system fall under any of the categories listed in Annex III of the AI Act, such as:
+First, understand if the system is a "safety component":: 
 
-**Biometrics**:
+A component is considered a "safety component" if EITHER:   
+\- It fulfills a safety function for a product or system OR   
+\- Its failure or malfunctioning endangers the health and safety of persons 
 
-* Remote biometric identification systems (excluding verification of identity claims).  
-* Biometric categorization based on sensitive attributes.  
-* Emotion recognition systems.
+Examples of safety components:   
+\- Systems monitoring water pressure in critical infrastructure   
+\- Fire alarm controlling systems in computing centers   
+\- Components that directly protect physical integrity of infrastructure   
+\- Components that protect health and safety of persons and property 
 
-**Critical Infrastructure**:
+Note: Components used solely for cybersecurity purposes are NOT considered safety components.
 
-* AI used as safety components in digital infrastructure, road traffic, or utilities (water, gas, heating, electricity) that are essential services to society and vital for the public’s functioning. 
+Then, check if the AI system is a product, or safety component of a product, covered by any of these Union harmonization laws under Annex I of the AI Act:
 
-**Education and Vocational Training**:
+Section A (New Legislative Framework): 
 
-* AI for admission or placement decisions.  
-* AI to evaluate learning outcomes or guide learning processes.  
-* AI assessing education access levels.  
-* AI monitoring prohibited behavior during tests.
+* Machinery Directive (2006/42/EC)   
+* Toy Safety Directive (2009/48/EC)   
+* Recreational Craft Directive (2013/53/EU)   
+* Lifts Directive (2014/33/EU)   
+* ATEX Directive (2014/34/EU) \- Equipment for explosive atmospheres   
+* Radio Equipment Directive (2014/53/EU)   
+* Pressure Equipment Directive (2014/68/EU)   
+* Cableway Installations Regulation (2016/424)   
+* Personal Protective Equipment Regulation (2016/425)   
+* Gas Appliances Regulation (2016/426)   
+* Medical Devices Regulation (2017/745)   
+* In Vitro Diagnostic Medical Devices Regulation (2017/746) 
 
-**Employment and Workforce Management**:
+Section B: 
 
-* AI for recruitment, filtering applications, or evaluating candidates.  
-* AI for decisions on work contracts, promotions, terminations, task allocations, or performance monitoring.
+* Civil Aviation Security Regulation (300/2008)   
+* Two/Three-Wheel Vehicles Regulation (168/2013)   
+* Agricultural/Forestry Vehicles Regulation (167/2013)   
+*  Marine Equipment Directive (2014/90/EU)   
+* Rail System Interoperability Directive (2016/797)   
+* Motor Vehicles Regulation (2018/858)   
+* Civil Aviation/EASA Regulation (2018/1139) 
 
-**Access to Essential Services**:
+2\. Standalone System Assessment:  
+Does the system's purpose align with any of these areas in Annex III of the AI Act:
 
-* AI assessing eligibility for public benefits/services (e.g., healthcare).  
-* AI evaluating creditworthiness (excluding fraud detection).  
-* AI for risk assessment in life/health insurance pricing.  
-* AI classifying emergency calls or dispatching emergency services.
+a) Biometric Identification & Categorization:  
+\- Remote biometric identification systems  
+\- Biometric categorization systems based on sensitive attributes  
+\- Emotion recognition systems  
+(Note: Excludes 1:1 verification/authentication systems)
 
-**Law Enforcement**:
+b) Critical Infrastructure:  
+\- Safety components in management/operation of critical digital infrastructure  
+\- Safety components in road traffic, water/gas/heating/electricity supply  
+(Note: Excludes cybersecurity-only systems)
 
-* AI assessing risk of victimization.  
-*  AI as polygraphs or similar tools.  
-*  AI evaluating evidence reliability.  
-*  AI assessing reoffending risk (not solely based on profiling).  
-* AI for profiling during criminal investigations.
+c) Education/Training:  
+\- Systems for determining access/admission  
+\- Systems for evaluating learning outcomes  
+\- Systems for assessing education levels  
+\- Systems for monitoring student behavior during tests
 
-**Migration, Asylum, and Border Control**:
+d) Employment/Worker Management:  
+\- Recruitment and selection systems  
+\- Systems for promotion/termination decisions  
+\- Task allocation systems  
+\- Performance monitoring systems
 
-* AI as polygraphs or similar tools.  
-* AI assessing security, migration, or health risks.  
-* AI for asylum, visa, or residence permit applications.  
-* AI for detecting or identifying persons in migration contexts (excluding travel document verification).
+e) Essential Services Access:  
+\- Public assistance benefit evaluation systems  
+\- Creditworthiness assessment systems  
+\- Life/health insurance risk assessment systems  
+\- Emergency service dispatch/prioritization systems
 
-**Justice and Democratic Processes**:
+f) Law Enforcement:  
+\- Risk assessment systems (victim/offender)  
+\- Lie detection/similar tools  
+\- Evidence reliability evaluation  
+\- Criminal profiling systems  
+\- Natural person profiling systems
 
-* AI assisting judicial authorities with legal interpretation or dispute resolution.  
-* AI influencing election/referendum outcomes or voting behavior (excluding backend campaign management tools).
+g) Migration/Asylum/Border Control:  
+\- Lie detection tools  
+\- Risk assessment systems  
+\- Document/evidence verification systems  
+\- Border monitoring/surveillance systems
 
-**Other High Risk Use Cases:**  
-Highlight these startups for post inspection, because they require special review.
+h) Justice/Democratic Processes:  
+\- Systems assisting judicial decisions  
+\- Systems influencing voting behavior/election outcomes  
+(Note: Excludes administrative campaign management tools)
 
-* Defense or democracy related topics  
-* Medical devices, services or solutions
+3\. Exception Analysis:  
+If the system falls under an Annex III area, could it qualify for any exceptions:
 
-**Common Examples:**  
-Here are some of the most widespread use cases that might fall under the high risk category. These provide a guideline and reference for your assessment.
+a) Narrow Procedural Task:  
+\- Does it only transform data formats?  
+\- Does it only classify/categorize documents?  
+\- Does it only detect duplicates?
 
-* AI powered recruitment and development tools for human resources  
-* Legal AI assistants   
-* Medical diagnosis and/or treatment 
+b) Improvement of Human Activity:  
+\- Does it only enhance previously completed work?  
+\- Does it only provide an additional layer to human activity?  
+\- Example: Improving language in drafted documents
 
-If the AI system falls under Annex III, does it meet any of these exemption criteria:
+c) Pattern Detection:  
+\- Does it only identify patterns in previous decisions?  
+\- Is it used only for ex-post analysis?  
+\- Does it require human review?  
+\- Example: Analyzing grading patterns for inconsistencies
 
-* Performs a narrow procedural task  
-  * Improves the result of a previously completed human activity  
-  * Detects decision-making patterns without replacing human assessment  
-  * Performs a preparatory task for an assessment
+d) Preparatory Tasks:  
+\- Is it limited to file handling/indexing?  
+\- Does it only process/link data?  
+\- Is it only used for translation?
 
-Based on your analysis, classify the AI use case as high-risk or not high-risk. Provide a brief explanation for your classification, citing relevant aspects of the EU AI Act.
+Important: These exceptions do not apply if the system performs profiling of natural persons.  
+'''
 
-## 3\. Limited Risk
 
-AI systems with potential for manipulation or deceit, requiring transparency. General purpose AI (GPAI) models also fall under this category. **‘General-purpose AI model’** means an AI model trained on large-scale data, often using self-supervision, that exhibits broad versatility, can perform diverse tasks competently, and is integrable into various downstream systems or applications. This excludes models used solely for research, development, or prototyping prior to market placement.  
-Examples:
 
-* Chatbots  
-* Deepfakes
+Step 2: Check if additional transparency obligations apply to the AI Use Case based on the following information  
 
-## 4\. Minimal Risk
+'''  
+To help determine if the AI Use Case is classified as having transparency obligations under the EU AI Act, please analyze the following information:
 
-AI systems not falling into the above categories, which are largely unregulated.  
-Examples:
+Key Categories Requiring Transparency:
 
-* AI-enabled video games  
-* Spam filters  
-* Recommender Systems
+1. Systems Interacting with Natural Persons (Art 50(1))  
+* Applies when there's a risk that people might believe they're interacting with a human  
+* Exception: When it's obvious from the circumstances/context  
+* Exception: Law enforcement systems for detecting/preventing crime  
+* Example: AI chatbots, virtual assistants
 
-## Assessment Process
+2. Systems Generating Synthetic Content (Art 50(2))  
+* Covers AI systems generating audio, image, video, or text content  
+* Exception: Systems only performing assistive function for standard editing  
+* Exception: Systems not substantially altering input data  
+* Example: Image generators, text-to-speech systems
 
-1. Review the AI startup's technology and use cases.  
-2. Compare the AI system's purpose and functionality to the examples and definitions provided for each risk category.  
-3. Consider the potential impact on safety, fundamental rights, and the environment.  
-4. Classify the AI system into the appropriate risk category.  
-5. Provide a brief explanation for the classification, referencing specific aspects of the AI Act and examples given.
+3. Emotion Recognition Systems (Art 50(3))  
+* Systems identifying/inferring emotions or intentions based on biometric data  
+* Example: Systems analyzing facial expressions for emotional states
 
-Format you answer in this way:  
+4. Biometric Categorization Systems (Art 50(3))  
+* Systems categorizing people based on biometric data  
+* Example: Systems categorizing people by age, gender, or other characteristics
+
+5. Deep Fakes/Manipulated Content (Art 50(4))  
+* Content resembling existing persons/places that appears authentic  
+* Exception: Creative/artistic/satirical content (requires different disclosure approach)  
+* Exception: AI-generated text that undergoes human review/editorial control  
+* Example: AI-generated videos of real people
+
+'''
+
+If you believe transparency obligations apply, please do the following:
+
+- If the system was also high-risk based on the previous step, please return: “high-risk and transparency obligations”  
+- Terminate the analysis here
+
+If you believe transparency obligations *do not apply* or are unsure: 
+
+- Return “low-risk”
+
+
+
+Format you answer in this way:
+
 AI Use Case: 
 Use Case Description: 
 Risk Classification: 
-Reason: [Cite relevant aspects from the EU AI Act in your explanation]
-Confidence Level: [How confident are you in your current classification? Pick a value from 0-100%]
-Requires Additional Information: [If you have doubts about this classification, write Yes/No followed by what additional informtaion is absolutely necessary without which you can't be sure about the classification]
+Reason: [Cite relevant annexes and clauses from the instructions above in your reasoning]
+Requires Additional Information: [If you have doubts about this classification, answer 'Yes' or 'No', followed by what additional informtaion was necessary to classify this use case]
 
 Do not give any intros or outros. The following are the AI Use cases of the startup you have to classify using all of the above rules:  
 {all_use_cases}
         """
+
         # print(eu_ai_act)
         # eu_ai_act_without_prompt = f"For each of the following AI use cases, classify them according to the EU AI Act. Format you answer in this way:\n\nAI Use Case:\nContextual Considerations:\nRisk Classification:\nReason:\n\n{all_use_cases}"
         # print(eu_ai_act_without_prompt)
         return eu_ai_act
 
 
+
+
+# Requires Additional Information: [If you have doubts about this classification, write 'Yes or No' followed by what additional informtaion is absolutely necessary without which you can't be sure about the classification]
