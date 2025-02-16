@@ -33,16 +33,19 @@ The order of risk classification for this task from highest to lowest is:
 3) High-risk AI system
 4) System with transparency obligations
 5) Low-risk AI system
-6) None
 
-Identify the highest risk classification present in the input. If multiple risk classifications have the same highest level, return the one that appears **first in the list above** and does **not** have 'Requires Additional Information' as 'Yes'. If no risk classifications are present, return 'None'.
+Identify the highest **exact** risk classification **as stated in the text**. Do not modify, simplify, or generalize the classification. 
+
+If multiple risk classifications have the same highest level, return the one that appears **first in the list above** and does **not** have 'Requires Additional Information' as 'Yes'.
+
+If no valid risk classification is present in the given text, return 'None' for 'highest_risk_classification' and **empty strings for all the other fields** in the output JSON object.
 
 Return the result in the following **strict JSON format** and **do not include any other text outside the JSON object**:
 
 {{
-  "highest_risk_classification": "<The highest risk classification>",
+  "highest_risk_classification": "<Extract the exact wording of the highest risk classification from the text>",
   "requires_additional_information": "<Yes or No>",
-  "what_additional_information": "<Provide the reason mentioned in the text if additional information is required; otherwise, return null>"
+  "what_additional_information": "<Provide the reason mentioned in the text if additional information is required. Otherwise, return an empty string>"
 }}
 """
 

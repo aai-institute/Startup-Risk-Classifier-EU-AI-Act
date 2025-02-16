@@ -67,7 +67,7 @@ class WebScraper(LinkWorker):
             print(f"Page load timeout: {self.__url}. Stopping page load.")
             self.__driver.execute_script("window.stop();")  # Stop the loading
         except Exception as e:
-            print(f"Error opening URL {self.__url}. Reason: {e}.")
+            print(f"Error opening URL {self.__url}")
             return 0 # General Error
 
     def quit_driver(self):

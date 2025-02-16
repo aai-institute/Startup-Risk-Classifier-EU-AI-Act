@@ -27,8 +27,7 @@ from Classes import ChatGPT, Prompts, WebScraper, TextExtractor
 load_dotenv()
 
 # Constants
-TOTAL_PAGE_CRAWLS = 2
-
+TOTAL_PAGE_CRAWLS = 4
 
 
 def load_startups_excel(startups_file):
@@ -64,27 +63,33 @@ def prepare_AI_Act_prompt(prompt_file, all_ai_use_cases):
 
 AI Use Case: 
 Use Case Description: 
-Risk Classification: ["Prohibited", "High-risk with transparency obligations", "High-risk", "System with transparency obligations", "Low-risk"]
-Reason: [Cite relevant annexes and clauses from the instructions above in your reasoning]
-Requires Additional Information: [If you have doubts about this classification, answer 'Yes' or 'No', followed by what additional informtaion was necessary to classify this use case]
+Risk Classification: <Do not use uncertain terms like "potentially" or "unsure". Always make a definitive classification.>
+Reason: <Provide a justification based on the relevant annexes and clauses from the instructions above. Clearly explain why the use case falls under the chosen classification.>
+Requires Additional Information: <Answer "Yes" or "No". If "Yes" specify exactly what additional information was needed to classify this use case, but still provide a classification based on the available details.>
 
-Do not give any intros or outros. The following are the AI Use cases of the startup you have to classify using all of the above rules: {all_ai_use_cases}
+Do not include any intros or outros. The following are the AI Use cases of the startup you have to classify: {all_ai_use_cases}
 """
+
+# Requires Additional Information: <If you have doubts about this classification, answer 'Yes' or 'No', followed by what additional informtaion was necessary to classify this use case>
 
     # print(file_content)  # Output all content
     return file_content
 
 
+import pandas as pd
 
 def prompt_approach(model_name, classification_model_name, content_shortener_model, sheet, output_sheet, output_wb, prompt_file, output_filename):
     # Initialize the objects
     web_scraper_obj = WebScraper()
 
     # sheet.max_row + 1
-    for row in range(2, sheet.max_row + 1):
+    for row in range(2, sheet.max_row):
         url = sheet.cell(row=row, column=2).value
         startup_name = sheet.cell(row=row, column=1).value
         
+        if pd.isnull(url):
+            continue
+
         prompts_obj = Prompts(TOTAL_PAGE_CRAWLS)
         ai_use_cases = []
 
@@ -93,7 +98,7 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
         raw_homepage_url = web_scraper_obj.get_url()
         # print(f"URL: {web_scraper_obj.get_url()}")
         time.sleep(1)
-        yield f"data: Row {row-1}: {startup_name}\n\n"
+        yield f"data: Row {row}: {startup_name}\n\n"
         
         # Load page, get the content and links
         web_scraper_obj.load_page()
@@ -283,9 +288,12 @@ def upload():
     if not allowed_file(file2.filename, "file2"):
         return jsonify({"error": "File 2 must be a Word (.docx) file"}), 400
 
-    unique_filename1 = f"{uuid.uuid4().hex}_{secure_filename(file1.filename)}"
-    unique_filename2 = f"{uuid.uuid4().hex}_{secure_filename(file2.filename)}"
-    unique_filename3 = f"{uuid.uuid4().hex}.xlsx"
+    # Generate a unique identifier for the file
+    request_id = str(uuid.uuid4().hex)
+
+    unique_filename1 = f"{request_id}_{secure_filename(file1.filename)}"
+    unique_filename2 = f"{request_id}_{secure_filename(file2.filename)}"
+    unique_filename3 = f"{request_id}.xlsx"
 
     upload_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), app.config['UPLOAD_FOLDER'])
     os.makedirs(upload_dir, exist_ok=True)
@@ -296,11 +304,14 @@ def upload():
     file1.save(file1_path)
     file2.save(file2_path)
 
-    session['startups_file'] = unique_filename1
-    session['prompt_file'] = unique_filename2
-    session['download_file'] = unique_filename3
+    session[request_id] = {
+        'startups_file': unique_filename1,
+        'prompt_file': unique_filename2,
+        'download_file': unique_filename3
+    }
 
-    return jsonify({"message": "Files uploaded successfully!"})
+    # Send the unique identifier back to the client (for unique download link) 
+    return jsonify({"message": "Files uploaded successfully!", "request_id": request_id})
 
 
 
@@ -319,6 +330,10 @@ def flask_web_scraper_runner(startups_file, prompt_file, output_filename):
 
         yield from prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, prompt_file=prompt_file_path, output_filename=output_filename)
 
+        # Delete the uploaded files
+        os.remove(f"user_uploads/{startups_file}")
+        os.remove(f"user_uploads/{prompt_file}")
+
         yield "data: Processing complete!\n\n"
         
     return process()
@@ -328,9 +343,15 @@ def flask_web_scraper_runner(startups_file, prompt_file, output_filename):
 
 @app.route('/run_process', methods=['GET'])
 def run_process():
-    startups_file = session.get("startups_file")
-    prompt_file = session.get("prompt_file")
-    output_filename = session.get("download_file")
+    request_id = request.args.get("request_id")
+    
+    if not request_id or request_id not in session:
+        return jsonify({"error": "Session expired or files not uploaded"}), 400
+
+    session_data = session[request_id]
+    startups_file = session_data.get("startups_file")
+    prompt_file = session_data.get("prompt_file")
+    output_filename = session_data.get("download_file")
 
     if not startups_file or not prompt_file:
         return jsonify({"error": "Session expired or files not uploaded"}), 400
@@ -341,8 +362,11 @@ def run_process():
 
 @app.route('/download')
 def download_file():
-    filename = session.get('download_file')
+    request_id = request.args.get("request_id")
+    if not request_id or request_id not in session:
+        return jsonify({"error": "No file available for download"}), 400
 
+    filename = session[request_id].get('download_file')
     if not filename:
         return jsonify({"error": "No file available for download"}), 400
 
