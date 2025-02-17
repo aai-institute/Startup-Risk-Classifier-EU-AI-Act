@@ -65,7 +65,7 @@ AI Use Case:
 Use Case Description: 
 Risk Classification: <Do not use uncertain terms like "potentially" or "unsure". Always make a definitive classification. Make sure you have read the Annexes again.>
 Reason: <Provide a justification based on the relevant annexes and clauses from the instructions above. Clearly explain why the use case falls under the chosen classification.>
-Requires Additional Information: <Answer "Yes" or "No". If "Yes" specify exactly what additional information was needed to classify this use case, but still provide a classification based on the available details.>
+Requires Additional Information: <Answer "Yes" or "No". If "Yes" specify exactly what additional information was needed to classify this use case.>
 
 Do not include any intros or outros. The following are the AI Use cases of the startup you have to classify: {all_ai_use_cases}
 """
