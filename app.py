@@ -63,7 +63,7 @@ def prepare_AI_Act_prompt(prompt_file, all_ai_use_cases):
 
 AI Use Case: 
 Use Case Description: 
-Risk Classification: <Do not use uncertain terms like "potentially" or "unsure". Always make a definitive classification.>
+Risk Classification: <Do not use uncertain terms like "potentially" or "unsure". Always make a definitive classification. Make sure you have read the Annexes again.>
 Reason: <Provide a justification based on the relevant annexes and clauses from the instructions above. Clearly explain why the use case falls under the chosen classification.>
 Requires Additional Information: <Answer "Yes" or "No". If "Yes" specify exactly what additional information was needed to classify this use case, but still provide a classification based on the available details.>
 
@@ -83,7 +83,7 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
     web_scraper_obj = WebScraper()
 
     # sheet.max_row + 1
-    for row in range(2, sheet.max_row):
+    for row in range(2, 11):
         url = sheet.cell(row=row, column=2).value
         startup_name = sheet.cell(row=row, column=1).value
         
