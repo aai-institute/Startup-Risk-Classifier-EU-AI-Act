@@ -1,0 +1,6 @@
+in nginx container
+apt-get -y update && apt-get -y upgrade
+apt-get install -y certbot
+apt-get install -y python3-certbot-nginx
+
+certbot --nginx -d 8241223.xyz -d www.8241223.xyz
