@@ -34,10 +34,11 @@ class Prompts():
 
 The order of risk classification for this task from highest to lowest is:
 1) Prohibited AI system
-2) High-risk AI system with transparency obligations
-3) High-risk AI system
+2) High-risk AI system under Annex I
+3) High-risk AI system under Annex III
 4) System with transparency obligations
-5) Low-risk AI system
+5) High-risk AI system with transparency obligations
+6) Low-risk AI system
 
 Identify the highest **exact** risk classification **as stated in the text**. Do not modify, simplify, or generalize the classification. 
 
