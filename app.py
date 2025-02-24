@@ -6,6 +6,7 @@ import uuid
 import ast
 
 # Third-Party Library
+import pandas as pd
 import openpyxl
 from docx import Document
 from dotenv import load_dotenv
@@ -76,7 +77,6 @@ Do not include any intros or outros. The following are the AI Use cases of the s
     return file_content
 
 
-import pandas as pd
 
 def prompt_approach(model_name, classification_model_name, content_shortener_model, sheet, output_sheet, output_wb, prompt_file, output_filename):
     # Initialize the objects
