@@ -40,9 +40,7 @@ The order of risk classification for this task from highest to lowest is:
 5) High-risk AI system with transparency obligations
 6) Low-risk AI system
 
-Identify the highest **exact** risk classification **as stated in the text**. Do not modify, simplify, or generalize the classification. 
-
-If multiple risk classifications have the same highest level, return the one that appears **first in the list above** and does **not** have 'Requires Additional Information' as 'Yes'.
+Identify the **highest risk classification** appearing in the text based on the ranking above.  
 
 If no valid risk classification is present in the given text, return 'None' for 'highest_risk_classification' and **empty strings for all the other fields** in the output JSON object.
 
