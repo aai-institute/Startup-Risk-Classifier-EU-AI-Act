@@ -27,24 +27,6 @@
         <div class="input-group">
           <label for="file2">Upload Word File (.docx only):</label>
           <p class="instructions">The word file should describe which AI Use Cases (or AI Systems) fall under Prohibited, High Risk, Limited Risk and Minimal Risk according to the EU AI Act.</p>
-          <p class="instructions"><strong>*Important: </strong>Please note that the bot attaches the following instruction right after your prompt defined in the uploaded file, to get answers in a structured format:</p>
-          <div class="word-instructions">
-            <p>
-              <strong>Format your answer in this way:</strong><br /><br />
-
-              <strong>AI Use Case:</strong> <br />
-              <strong>Use Case Description:</strong> <br />
-              <strong>Risk Classification:</strong>
-              [Do not use uncertain terms like "potentially" or "unsure". Always make a definitive classification.] <br />
-              <strong>Reason:</strong>
-              [Provide a justification based on the relevant annexes and clauses from the instructions above. Clearly explain why the use case falls under the chosen classification.] <br />
-              <strong>Requires Additional Information:</strong>
-              [Answer "Yes" or "No". If "Yes" specify exactly what additional information was needed to classify this use case.] <br /><br />
-
-              Do not include any intros or outros. The following are the AI Use cases of the startup you have to classify: <br />
-              <i>{The AI Startup Use Cases will be listed here}</i>
-            </p>
-          </div>
           <input type="file" name="file2" id="file2" accept=".docx" required />
         </div>
 

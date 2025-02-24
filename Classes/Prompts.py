@@ -22,6 +22,11 @@ class Prompts():
         
         return important_links
     
+    def combine_use_cases(self, all_ai_use_cases):
+        combined_use_cases = f"The following are all the known AI use cases of a company. Make sure there are no duplicates and give them all again in the same format as they are given to you. If I do not provide the AI use cases, then output 'Error: No AI Use Cases Found'.\n\nAll AI Use Cases:\n\n {all_ai_use_cases}"
+        
+        return combined_use_cases
+    
     def get_highest_risk(self, all_use_cases):
         highest_risk = f"""What is the highest 'Risk Classification' mentioned in these risk classifications:
 

@@ -60,18 +60,7 @@ def prepare_AI_Act_prompt(prompt_file, all_ai_use_cases):
     # Read the Word document properly
     file_content = read_docx(prompt_file)
 
-    file_content += f"""Format you answer in this way:
-
-AI Use Case: 
-Use Case Description: 
-Risk Classification: <Do not use uncertain terms like "potentially" or "unsure". Always make a definitive classification. Make sure you have read the Annexes again.>
-Reason: <Provide a justification based on the relevant annexes and clauses from the instructions above. Clearly explain why the use case falls under the chosen classification.>
-Requires Additional Information: <Answer "Yes" or "No". If "Yes" specify exactly what additional information was needed to classify this use case.>
-
-Do not include any intros or outros. The following are the AI Use cases of the startup you have to classify: {all_ai_use_cases}
-"""
-
-# Requires Additional Information: <If you have doubts about this classification, answer 'Yes' or 'No', followed by what additional informtaion was necessary to classify this use case>
+    file_content += f"""\n\nDo not give intros or outros. The following are the AI Use cases of the startup you have to classify: {all_ai_use_cases}"""
 
     # print(file_content)  # Output all content
     return file_content
@@ -122,7 +111,7 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
         # Use a smaller model to remove cookie and unrelated text - reduces chance of classification error
         shortened_content, input_tokens, output_tokens = content_shortener(content_shortener_model, prompts_obj, page_content)
         # Update token cost
-        web_scraper_obj.set_token_cost(input_tokens, output_tokens, model_name)
+        web_scraper_obj.set_token_cost(input_tokens, output_tokens, content_shortener_model)
         # print(f"Shortened Content: {shortened_content}")
 
 
@@ -139,8 +128,17 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
         # Also return the updated token count
         all_ai_use_cases = traverse_links(web_scraper_obj, chat_links_response, model_name, content_shortener_model, ai_use_cases, prompts_obj)
 
+
+        # Process all the AI use cases into a single string
+        use_cases_combiner_obj = ChatGPT(model_name, prompts_obj.combine_use_cases(all_ai_use_cases), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+        use_cases_combined, input_tokens, output_tokens = use_cases_combiner_obj.chat_model()
+        # Update token cost
+        web_scraper_obj.set_token_cost(input_tokens, output_tokens, model_name)
+
+
+
         # Prompt based approach for the EU AI Act
-        eu_ai_act_prompt = prepare_AI_Act_prompt(prompt_file, all_ai_use_cases)
+        eu_ai_act_prompt = prepare_AI_Act_prompt(prompt_file, use_cases_combined)
         eu_ai_act_obj = ChatGPT(classification_model_name, eu_ai_act_prompt, [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
         eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
         # Update token cost
@@ -159,7 +157,7 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
         what_additional_information = risk_parse_response["what_additional_information"]
 
 
-        save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, chat_links_response, all_ai_use_cases, eu_ai_act_response, highest_risk_classification, requires_additional_information, what_additional_information, output_filename)
+        save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, chat_links_response, all_ai_use_cases, use_cases_combined, eu_ai_act_response, highest_risk_classification, requires_additional_information, what_additional_information, output_filename)
 
         # --- Finishing calls ---
         # Reset token cost, redirected URL
@@ -178,7 +176,7 @@ def traverse_links(web_scraper_obj, links, model_name, content_shortener_model, 
         # Shorten the content
         shortened_content, input_tokens, output_tokens = content_shortener(content_shortener_model, prompts_obj, page_content)
         # Update token cost
-        web_scraper_obj.set_token_cost(input_tokens, output_tokens, model_name)
+        web_scraper_obj.set_token_cost(input_tokens, output_tokens, content_shortener_model)
 
 
         chat_use_case_obj = ChatGPT(model_name, prompts_obj.update_startup_summary(f"\n\n".join(ai_use_cases), shortened_content), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
@@ -200,8 +198,8 @@ def extract_list(input_string):
         return ast.literal_eval(match.group())
     return None
 
-def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, additional_urls, all_ai_use_cases, eu_ai_act_response, highest_risk_classification, requires_additional_information, what_additional_information, output_filename):
-    headers = ["Startup Name", "Homepage URL", "Redirected URL (for logging only)", "Additional URLs"] + [f"Page {i+1}" for i in range(TOTAL_PAGE_CRAWLS)] + ["EU AI Act Risk Classification", "Highest Risk Classification", "Requires Additional Information", "What Additional Information", "Total Token Cost ($)"]
+def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, additional_urls, all_ai_use_cases, use_cases_combined, eu_ai_act_response, highest_risk_classification, requires_additional_information, what_additional_information, output_filename):
+    headers = ["Startup Name", "Homepage URL", "Redirected URL (for logging only)", "Additional URLs"] + [f"Page {i+1}" for i in range(TOTAL_PAGE_CRAWLS)] + ["Combined AI Use Cases" , "EU AI Act Risk Classification", "Highest Risk Classification", "Requires Additional Information", "What Additional Information", "Total Token Cost ($)"]
     # Write headers if not present
     if output_sheet.max_row < 2:
         output_sheet.append(headers)
@@ -210,7 +208,7 @@ def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_s
     use_cases_padded = all_ai_use_cases + [""] * (TOTAL_PAGE_CRAWLS - len(all_ai_use_cases))
 
     # Write data
-    row = [startup_name, raw_homepage_url, web_scraper_obj.get_redirected_url(), ", ".join(additional_urls)] + use_cases_padded[:TOTAL_PAGE_CRAWLS] + [eu_ai_act_response, highest_risk_classification, requires_additional_information, what_additional_information, web_scraper_obj.get_token_cost()]
+    row = [startup_name, raw_homepage_url, web_scraper_obj.get_redirected_url(), ", ".join(additional_urls)] + use_cases_padded[:TOTAL_PAGE_CRAWLS] + [use_cases_combined, eu_ai_act_response, highest_risk_classification, requires_additional_information, what_additional_information, web_scraper_obj.get_token_cost()]
     output_sheet.append(row)
 
 

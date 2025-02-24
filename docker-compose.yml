@@ -18,7 +18,7 @@ services:
     env_file:
       - .env
     restart: always
-    # command: ["gunicorn", "--timeout", "0", "--workers", "4", "-b", "0.0.0.0:8000", "app:app"]
+    command: ["gunicorn", "--timeout", "0", "--workers", "1", "-b", "0.0.0.0:8000", "app:app"]
 
   redis:
     container_name: redis-container
