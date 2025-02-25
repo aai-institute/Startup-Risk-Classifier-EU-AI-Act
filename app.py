@@ -166,27 +166,32 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
 
 
 def traverse_links(web_scraper_obj, links, model_name, content_shortener_model, ai_use_cases, prompts_obj):
-    # Traverse the important links
-    for link in links:
-        web_scraper_obj.set_url(link)
-        # print(f"Going into relavant link: {link}")
-        web_scraper_obj.load_page()
-        page_content = web_scraper_obj.get_page_content(model_name)
+    try:
+        # Traverse the important links
+        for link in links:
+            web_scraper_obj.set_url(link)
+            # print(f"Going into relavant link: {link}")
+            web_scraper_obj.load_page()
+            page_content = web_scraper_obj.get_page_content(model_name)
 
-        # Shorten the content
-        shortened_content, input_tokens, output_tokens = content_shortener(content_shortener_model, prompts_obj, page_content)
-        # Update token cost
-        web_scraper_obj.set_token_cost(input_tokens, output_tokens, content_shortener_model)
+            # Shorten the content
+            shortened_content, input_tokens, output_tokens = content_shortener(content_shortener_model, prompts_obj, page_content)
+            # Update token cost
+            web_scraper_obj.set_token_cost(input_tokens, output_tokens, content_shortener_model)
 
 
-        chat_use_case_obj = ChatGPT(model_name, prompts_obj.update_startup_summary(f"\n\n".join(ai_use_cases), shortened_content), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
-        chat_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
+            chat_use_case_obj = ChatGPT(model_name, prompts_obj.update_startup_summary(f"\n\n".join(ai_use_cases), shortened_content), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+            chat_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
 
-        # Update token cost
-        web_scraper_obj.set_token_cost(input_tokens, output_tokens, model_name)
-        
-        ai_use_cases.append(chat_use_case_response)
-
+            # Update token cost
+            web_scraper_obj.set_token_cost(input_tokens, output_tokens, model_name)
+            
+            ai_use_cases.append(chat_use_case_response)
+    
+    except Exception as e:
+        # Return error message only
+        return ["Page Error: Unable to traverse links"]
+    
     return ai_use_cases
 
 # Extract Python-style list from a string
