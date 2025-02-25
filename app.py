@@ -89,7 +89,7 @@ def extract_list(input_string):
     return None
 
 def save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, additional_urls, all_ai_use_cases, use_cases_combined, output_filename):
-    headers = ["Startup Name", "Homepage URL", "Redirected URL (for logging only)", "Additional URLs"] + [f"Page {i+1}" for i in range(TOTAL_PAGE_CRAWLS)] + ["Combined AI Use Cases" , "EU AI Act Risk Classification", "Highest Risk Classification", "Requires Additional Information", "What Additional Information", "Total Token Cost ($)"]
+    headers = ["Startup Name", "Homepage URL", "Redirected URL (for logging only)", "Additional URLs"] + [f"Page {i+1}" for i in range(TOTAL_PAGE_CRAWLS)] + ["Combined AI Use Cases" , "Total Token Cost ($)"]
     # Write headers if not present
     if output_sheet.max_row < 2:
         output_sheet.append(headers)
@@ -120,8 +120,7 @@ def extract_use_cases_from_response(use_cases_full_text):
 
 
 
-def prompt_approach(model_name, classification_model_name, content_shortener_model, sheet, output_sheet, output_wb, prompt_file, output_filename):
-    print("Starting the prompt approach")
+def prompt_approach(model_name, classification_model_name, content_shortener_model, sheet, output_sheet, output_wb, output_filename):
     # Initialize the objects
     web_scraper_obj = WebScraper()
 
@@ -141,7 +140,7 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
         raw_homepage_url = web_scraper_obj.get_url()
         # print(f"URL: {web_scraper_obj.get_url()}")
         time.sleep(1)
-        yield f"data: Row {row}: {startup_name}\n\n"
+        print(f"Row {row}: {startup_name}")
         
         # Load page, get the content and links
         web_scraper_obj.load_page()
@@ -149,8 +148,6 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
         # Get the content and links
         page_content = web_scraper_obj.get_page_content(model_name)
         page_links = web_scraper_obj.get_page_links()
-
-
 
         # Use chat model to get relavant links
         chat_links_obj = ChatGPT(model_name, prompts_obj.get_important_links(page_links), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
@@ -189,28 +186,6 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
         # Update token cost
         web_scraper_obj.set_token_cost(input_tokens, output_tokens, model_name)
 
-
-
-        # # Prompt based approach for the EU AI Act
-        # eu_ai_act_prompt = prepare_AI_Act_prompt(prompt_file, use_cases_combined)
-        # eu_ai_act_obj = ChatGPT(classification_model_name, eu_ai_act_prompt, [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
-        # eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
-        # # Update token cost
-        # web_scraper_obj.set_token_cost(input_tokens, output_tokens, classification_model_name)
-
-
-        # # Parse the highest risk classification
-        # risk_parse_obj = ChatGPT("gpt-4o", prompts_obj.get_highest_risk(eu_ai_act_response), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
-        # risk_parse_response, input_tokens, output_tokens = risk_parse_obj.risk_classification_structured_chat()
-        # # Update token cost
-        # web_scraper_obj.set_token_cost(input_tokens, output_tokens, "gpt-4o")
-
-        # risk_parse_response = json.loads(risk_parse_response)
-        # highest_risk_classification = risk_parse_response["highest_risk_classification"]
-        # requires_additional_information = risk_parse_response["requires_additional_information"]
-        # what_additional_information = risk_parse_response["what_additional_information"]
-
-
         save_to_excel(output_sheet, output_wb, startup_name, raw_homepage_url, web_scraper_obj, chat_links_response, all_ai_use_cases, use_cases_combined, output_filename)
 
         # --- Finishing calls ---
@@ -219,17 +194,15 @@ def prompt_approach(model_name, classification_model_name, content_shortener_mod
         web_scraper_obj.reset_redirect_url()
 
 
-
 if __name__ == "__main__":
     startups_file = "Local Input/local-startups-input.xlsx"
     sheet = load_startups_excel(startups_file)
 
     output_sheet, output_wb = create_results_file()
 
-    prompt_file_path = "AI_Act_Prompt_Combined.docx"
     output_filename = "Local Output/Results.xlsx"
 
-    prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, prompt_file=prompt_file_path, output_filename=output_filename)
+    prompt_approach(model_name='chatgpt-4o-latest', classification_model_name='chatgpt-4o-latest', content_shortener_model='gpt-4o-mini', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, output_filename=output_filename)
     
 
 

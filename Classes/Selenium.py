@@ -20,7 +20,7 @@ class Selenium():
 
         chrome_options.add_argument('--window-size=1920,1080')
         # chrome_options.add_argument("--incognito")
-        chrome_options.add_argument("--log-level=1")
+        chrome_options.add_argument("--log-level=2")
 
         # Disable GPU
         # chrome_options.add_argument("--disable-gpu")  # Disables GPU acceleration
