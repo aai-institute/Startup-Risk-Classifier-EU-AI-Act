@@ -3,6 +3,7 @@ from typing import List
 
 class Risk_Classification_Structure(BaseModel):
     highest_risk_classification: str
+    highest_risk_classification_use_case: str
     requires_additional_information: str
     what_additional_information: str
 

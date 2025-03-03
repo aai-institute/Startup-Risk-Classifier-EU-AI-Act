@@ -32,7 +32,7 @@ class Prompts():
 
 {all_use_cases}
 
-Return **each** use case from above in the following strict **JSON** format and do not include any other text outside the JSON object. Each value should be an array of strings containing the **entire** respective use case. Put each section of a use case on a new line but there should be **no** empty lines in the use cases, and remove the bold (**) stars and other text formatting.
+Return **each** use case from above in the following strict **JSON** format and do not include any other text outside the JSON object. Each value should be an array of strings containing the **entire** respective use case. Put each section of a use case (AI Use Case, Use Case Description, Risk Classification, Reason, Requires Additional Information) on a new line but there should be no empty lines in the use cases, and remove the bold (**) stars and other text formatting.
 
 {{
     prohibited_ai_system:
@@ -56,12 +56,12 @@ Return **each** use case from above in the following strict **JSON** format and 
 The order of risk classification for this task from highest to lowest is:
 
 1) Prohibited AI system
-2) Unknown (if potentially high-risk but the classification is not clear)
 2) High-risk AI system under Annex I
 3) High-risk AI system under Annex III
-4) System with transparency obligations
-5) High-risk AI system with transparency obligations
-6) Low-risk AI system
+4) Unknown (if potentially high-risk under Annex I or III, but the classification is not clear)
+5) System with transparency obligations
+6) High-risk AI system with transparency obligations
+7) Low-risk AI system
 
 Identify the **highest risk classification** appearing in the text based on the ranking above. If there are multiple use cases with the same highest risk classification level, then choose the one that does not require additional information. If all of such use cases require additional information, then choose that appears first in the list.
 
@@ -69,6 +69,7 @@ Return the result in the following **strict JSON format** and **do not include a
 
 {{
   "highest_risk_classification": "<Extract the exact wording of the highest risk classification from the text>",
+  "highest_risk_classification_use_case": "<Extract the **entire** use case that has the highest risk classification>",
   "requires_additional_information": "<Yes or No>",
   "what_additional_information": "<If yes, what additional information is required for this use case. Otherwise, return an empty string>"
 }}
