@@ -113,29 +113,17 @@ def extract_list(input_string):
     return None
 
 
-def risk_separate_response_parser(risk_separate_response):
-    risk_keys = list(risk_separate_response.keys())
-    risk_values_array = [f"\n\n\n".join(risk_separate_response.get(key, [])) for key in risk_keys]
 
-    # Make a string of total counts for each risk classification
-    totals_array = [len(risk_separate_response.get(key, [])) for key in risk_keys] 
-    formatted_key_names = ["Prohibited AI system", "High-risk AI system under Annex I", "High-risk AI system under Annex III", "System with transparency obligations", "High-risk AI system with transparency obligations", "Low-risk AI system", "Unknown"]
-    
-    total_stats = "\n".join(f"{formatted_name}: {total}" for formatted_name, total in zip(formatted_key_names, totals_array))
-
-    return risk_values_array, total_stats
-
-
-
-def save_to_excel(output_sheet, output_wb, startup_name, url, redirect_url, use_cases_combined, eu_ai_act_response, risk_values_array, total_stats, highest_risk_classification, highest_risk_classification_use_case, requires_additional_information, what_additional_information, total_token_cost, output_filename):
-    headers = ["Startup Name", "Homepage URL", "Redirected URL", "AI Use Cases" , "EU AI Act Risk Classification", "Prohibited AI system", "High-risk AI system under Annex I", "High-risk AI system under Annex III", "System with transparency obligations", "High-risk AI system with transparency obligations", "Low-risk AI system", "Unknown", "Total Stats", "Highest Risk Classification", "Highest Risk Use Case", "Requires Additional Information", "What Additional Information", "Total Token Cost ($)"]
+def save_to_excel(output_sheet, output_wb, startup_name, url, redirect_url, use_cases_combined, eu_ai_act_response, total_token_cost, output_filename):
+    headers = ["Startup Name", "Homepage URL", "Redirected URL", "AI Use Cases" , "EU AI Act Risk Classification", "Total Token Cost ($)"]
     
     # Write headers if not present
     if output_sheet.max_row < 2:
         output_sheet.append(headers)
 
     # Write data
-    row = [startup_name, url, redirect_url, use_cases_combined, eu_ai_act_response] + risk_values_array + [total_stats, highest_risk_classification, highest_risk_classification_use_case, requires_additional_information, what_additional_information, total_token_cost]
+    
+    row = [startup_name, url, redirect_url, use_cases_combined, eu_ai_act_response, total_token_cost]
 
     output_sheet.append(row)
     output_wb.save(f"{output_filename}")
@@ -161,11 +149,10 @@ def prompt_approach(classification_model_name, prompt_file, sheet, output_sheet,
     web_scraper_obj = WebScraper()
 
     # sheet.max_row + 1
-    for row in range(407, sheet.max_row + 1):
+    for row in range(2, sheet.max_row + 1):
         startup_name = sheet.cell(row=row, column=1).value
         url = sheet.cell(row=row, column=2).value
         redirect_url = sheet.cell(row=row, column=3).value
-        previous_token_cost = sheet.cell(row=row, column=10).value
         use_cases_combined = sheet.cell(row=row, column=9).value
 
         if pd.isnull(url):
@@ -192,36 +179,12 @@ def prompt_approach(classification_model_name, prompt_file, sheet, output_sheet,
         web_scraper_obj.set_token_cost(input_tokens, output_tokens, "claude-3-7-sonnet-20250219")
 
 
-        # Separate the risks
-        risk_separate_obj = ChatGPT("gpt-4o", prompts_obj.separate_risks(eu_ai_act_response), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
-        risk_separate_response, input_tokens, output_tokens = risk_separate_obj.chat_structured(task="separate_risks")
-        # Update token cost
-        web_scraper_obj.set_token_cost(input_tokens, output_tokens, "gpt-4o")
-
-        risk_separate_response = json.loads(risk_separate_response)
-
-        risk_values_array, total_stats = risk_separate_response_parser(risk_separate_response)
-        
-
-        # Parse the highest risk classification
-        risk_parse_obj = ChatGPT("gpt-4o", prompts_obj.get_highest_risk(eu_ai_act_response), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
-        risk_parse_response, input_tokens, output_tokens = risk_parse_obj.chat_structured(task="risk_classification")
-        # Update token cost
-        web_scraper_obj.set_token_cost(input_tokens, output_tokens, "gpt-4o")
-
-        risk_parse_response = json.loads(risk_parse_response)
-        highest_risk_classification = risk_parse_response["highest_risk_classification"]
-        highest_risk_classification_use_case = risk_parse_response["highest_risk_classification_use_case"]
-        requires_additional_information = risk_parse_response["requires_additional_information"]
-        what_additional_information = risk_parse_response["what_additional_information"]
-
-
-        save_to_excel(output_sheet, output_wb, startup_name, url, redirect_url, use_cases_combined, eu_ai_act_response, risk_values_array, total_stats, highest_risk_classification, highest_risk_classification_use_case, requires_additional_information, what_additional_information, web_scraper_obj.get_token_cost() + previous_token_cost, output_filename)
+        save_to_excel(output_sheet, output_wb, startup_name, url, redirect_url, use_cases_combined, eu_ai_act_response, web_scraper_obj.get_token_cost(), output_filename)
 
         # --- Finishing calls ---
         # Reset token cost, redirected URL
         web_scraper_obj.reset_token_cost()
-        # web_scraper_obj.reset_redirect_url()
+        web_scraper_obj.reset_redirect_url()
 
 
 
