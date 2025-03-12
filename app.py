@@ -148,7 +148,7 @@ def prompt_approach(classification_model_name, prompt_file, sheet, output_sheet,
     web_scraper_obj = WebScraper()
 
     # sheet.max_row + 1
-    for row in range(2, sheet.max_row + 1):
+    for row in range(569, sheet.max_row + 1):
         startup_name = sheet.cell(row=row, column=1).value
         url = sheet.cell(row=row, column=2).value
         redirect_url = sheet.cell(row=row, column=3).value
