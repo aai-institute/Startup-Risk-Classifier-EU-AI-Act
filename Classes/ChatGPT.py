@@ -32,10 +32,16 @@ class ChatGPT():
         self.__context.append({"role": "user", "content": self.__prompt})
 
         try:
-            response = self.__client.chat.completions.create(
-                model=self.__model_name,
-                messages=self.__context
-            )
+            # Check if the model is "deepseek-reasoner" and add max_tokens accordingly
+            params = {
+                "model": self.__model_name,
+                "messages": self.__context
+            }
+
+            if self.__model_name == "deepseek-reasoner":
+                params["max_tokens"] = 8000
+
+            response = self.__client.chat.completions.create(**params)
 
             answer = response.choices[0].message.content.strip()
             self.__context.append({"role": "assistant", "content": answer})

@@ -166,16 +166,18 @@ def prompt_approach(classification_model_name, prompt_file, sheet, output_sheet,
 
         # Prompt based approach for the EU AI Act
         eu_ai_act_prompt = prepare_AI_Act_prompt(prompt_file, use_cases_combined)
-        # eu_ai_act_obj = ChatGPT(classification_model_name, eu_ai_act_prompt, [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
-        # eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
-        # # Update token cost
-        # web_scraper_obj.set_token_cost(input_tokens, output_tokens, classification_model_name)
-
-
-        # use anthropic to clasify
-        eu_ai_act_response, input_tokens, output_tokens = claude_api(eu_ai_act_prompt)
+        # Use deepseek to classify
+        eu_ai_act_obj = ChatGPT("deepseek-reasoner", eu_ai_act_prompt, [], OpenAI(api_key=os.getenv("DEEPSEEK_KEY"), base_url="https://api.deepseek.com", max_retries=5))
+        eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
         # Update token cost
-        web_scraper_obj.set_token_cost(input_tokens, output_tokens, "claude-3-7-sonnet-20250219")
+        web_scraper_obj.set_token_cost(input_tokens, output_tokens, classification_model_name)
+
+
+
+        # # use anthropic to clasify
+        # eu_ai_act_response, input_tokens, output_tokens = claude_api(eu_ai_act_prompt)
+        # # Update token cost
+        # web_scraper_obj.set_token_cost(input_tokens, output_tokens, "claude-3-7-sonnet-20250219")
 
 
         save_to_excel(output_sheet, output_wb, startup_name, url, redirect_url, use_cases_combined, eu_ai_act_response, web_scraper_obj.get_token_cost(), output_filename)
@@ -187,10 +189,6 @@ def prompt_approach(classification_model_name, prompt_file, sheet, output_sheet,
 
 
 
-import anthropic
-
-
-
 
 if __name__ == "__main__":
 
@@ -199,9 +197,7 @@ if __name__ == "__main__":
 
     output_sheet, output_wb = create_results_file()
 
-    output_filename = "Updated Claude Sonnet Results.xlsx"
+    output_filename = "DeepSeek-R1 Results.xlsx"
 
     prompt_approach(classification_model_name='chatgpt-4o-latest', prompt_file="Master_Prompt.docx", sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, output_filename=output_filename)
     
-
-
