@@ -22,19 +22,25 @@ load_dotenv()
 TOTAL_PAGE_CRAWLS = 4
 
 def claude_api(prompt):
-    client = anthropic.Anthropic(
-        api_key=os.getenv("ANTHROPIC_KEY")
-    )
-    message = client.messages.create(
-        model="claude-3-7-sonnet-20250219",
-        max_tokens=8192,
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-    message_content = message.content[0].text  # Extracts the actual message text
-    input_tokens = message.usage.input_tokens  # Extracts input tokens
-    output_tokens = message.usage.output_tokens  # Extracts output tokens
+    try:
+        client = anthropic.Anthropic(
+            api_key=os.getenv("ANTHROPIC_KEY")
+        )
+        message = client.messages.create(
+            model="claude-3-7-sonnet-20250219",
+            max_tokens=8192,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        message_content = message.content[0].text  # Extracts the actual message text
+        input_tokens = message.usage.input_tokens  # Extracts input tokens
+        output_tokens = message.usage.output_tokens  # Extracts output tokens
+
+    except Exception as e:
+        message_content = f"API ERROR: Anthropic API failed"
+        input_tokens = 0
+        output_tokens = 0
 
     return message_content, input_tokens, output_tokens
 
