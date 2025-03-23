@@ -135,9 +135,7 @@ AI systems that are safety components of products OR are themselves products cov
 For this classification rule to apply, two conditions must be fulfilled: 
 
 1. The system is either a product OR a safety component of a product covered by Union harmonization laws under Annex I of the AI Act, AND
-2. That product or safety component is required to undergo a third-party conformity assessment under that Union harmonized law 
-
-Note: Please remember that the system can either be a product by itself OR a safety component of a product
+2. That product or safety component of a product is required to undergo a third-party conformity assessment under that Union harmonized law 
 
 A component is considered a "safety component" if EITHER:   
 - It fulfills a safety function for a product or system OR   
