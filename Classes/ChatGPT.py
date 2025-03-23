@@ -28,18 +28,25 @@ class ChatGPT():
     def set_prompt(self, prompt):
         self.__prompt = prompt
     
-    def chat_model(self):
+    def chat_model(self, system_prompt=""):
+        if system_prompt:
+            self.__context.append({"role": "system", "content": system_prompt})
+
         self.__context.append({"role": "user", "content": self.__prompt})
 
         try:
             # Check if the model is "deepseek-reasoner" and add max_tokens accordingly
             params = {
                 "model": self.__model_name,
-                "messages": self.__context
+                "messages": self.__context,
             }
 
-            if self.__model_name == "deepseek-reasoner":
-                params["max_tokens"] = 8000
+            if self.__model_name == "o3-mini":
+                params["reasoning_effort"] = "high"
+                params["max_completion_tokens"] = 8192
+            
+            elif self.__model_name == "deepseek-reasoner":
+                params["max_tokens"] = 8192
 
             response = self.__client.chat.completions.create(**params)
 

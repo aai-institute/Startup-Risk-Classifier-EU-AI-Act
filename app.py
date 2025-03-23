@@ -73,7 +73,7 @@ def prepare_AI_Act_prompt(prompt_file, all_ai_use_cases):
     # Read the Word document properly
     file_content = read_docx(prompt_file)
 
-    file_content += f"""\n\nDo not give intros or outros. Respond in plain text string only (no unusual arrays), without any formatting f.e. no bold or ## headings or numbered headings. The following are the AI Use cases of the startup you have to classify: {all_ai_use_cases}"""
+    file_content += f"""\n\nDo not give any intros or outros. Respond in plain text string only (no unusual arrays), without any formatting f.e. no bold or ## headings or numbered headings. The following are the AI Use cases of the startup you have to classify: {all_ai_use_cases}"""
 
     # print(file_content)  # Output all content
     return file_content
@@ -154,7 +154,7 @@ def prompt_approach(classification_model_name, prompt_file, sheet, output_sheet,
     web_scraper_obj = WebScraper()
 
     # sheet.max_row + 1
-    for row in range(2, sheet.max_row + 1):
+    for row in range(16, 17):
         startup_name = sheet.cell(row=row, column=1).value
         url = sheet.cell(row=row, column=2).value
         redirect_url = sheet.cell(row=row, column=3).value
@@ -172,16 +172,17 @@ def prompt_approach(classification_model_name, prompt_file, sheet, output_sheet,
 
         # Prompt based approach for the EU AI Act
         eu_ai_act_prompt = prepare_AI_Act_prompt(prompt_file, use_cases_combined)
-        # eu_ai_act_obj = ChatGPT(classification_model_name, eu_ai_act_prompt, [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
-        # eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
-        # # Update token cost
-        # web_scraper_obj.set_token_cost(input_tokens, output_tokens, classification_model_name)
+
+        eu_ai_act_obj = ChatGPT(classification_model_name, eu_ai_act_prompt, [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+        eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
+        # Update token cost
+        web_scraper_obj.set_token_cost(input_tokens, output_tokens, classification_model_name)
 
 
         # use anthropic to clasify
-        eu_ai_act_response, input_tokens, output_tokens = claude_api(eu_ai_act_prompt)
+        # eu_ai_act_response, input_tokens, output_tokens = claude_api(eu_ai_act_prompt)
         # Update token cost
-        web_scraper_obj.set_token_cost(input_tokens, output_tokens, "claude-3-7-sonnet-20250219")
+        # web_scraper_obj.set_token_cost(input_tokens, output_tokens, "claude-3-7-sonnet-20250219")
 
 
         save_to_excel(output_sheet, output_wb, startup_name, url, redirect_url, use_cases_combined, eu_ai_act_response, web_scraper_obj.get_token_cost(), output_filename)
@@ -207,7 +208,7 @@ if __name__ == "__main__":
 
     output_filename = "Updated Claude Sonnet Results.xlsx"
 
-    prompt_approach(classification_model_name='chatgpt-4o-latest', prompt_file="Master_Prompt.docx", sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, output_filename=output_filename)
+    prompt_approach(classification_model_name='o3-mini', prompt_file="Master_Prompt.docx", sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, output_filename=output_filename)
     
 
 

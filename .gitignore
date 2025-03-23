@@ -1,12 +1,13 @@
 new-env/
 .env
 *.ipynb
+!Excel Tabs.ipynb
 *.xlsx
 *.docx
 *.csv
 *.pyc
 datasets/
-__pycache__/
+*/__pycache__/
 Previous Results/
 Excel Files/
 All Results/

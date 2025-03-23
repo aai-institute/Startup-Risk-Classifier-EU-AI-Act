@@ -1,0 +1,234 @@
+You will be provided with AI use cases of companies. You have to understand those use cases (provided later) and the following instructions to classify each use case:
+
+
+Step 1: Check if a use-case is high-risk based on the information contained in <Instructions for_High-Risk_Systems>
+
+-	Please assess whether it is high-risk under Annex I or Annex III sequentially based on the information contained in <Criteria_for_Annex_I_High_Risk_Systems> and <Criteria_for_Annex_III_High_Risk_Systems>
+
+Step 2: Check if additional transparency obligations apply to the use-case based on the information contained in <Instructions_for_Systems_with_Transparency_Obligations>
+
+Step 3: If the use-case is both high-risk *and* has transparency obligations, please classify it as a “High-risk AI system with transparency obligations”
+
+Step 4: If the system does not meet any of the criteria in the previous steps, please classify it as a “Low-risk AI system”
+
+<Instructions_for_High-Risk_Systems>
+To help determine if my AI system is classified as high-risk under the EU AI Act, please analyze the following information:
+
+There are two types of high-risk systems under the AI Act: 
+
+Annex I High-Risk: AI systems that are safety components of products OR are themselves products covered by Union harmonization laws listed in Annex I AND must undergo third-party conformity assessment under that legislation; and
+
+Annex III High-Risk: Standalone AI systems that fall into one of the use cases listed in Annex III
+
+Please analyse the use case against both types of classification rules sequentially: 
+
+<Criteria_for_Annex_I_High_Risk_Systems>
+
+Systems as products (Annex I High-Risk)
+
+For this classification rule to apply, two conditions must be fulfilled: 
+
+1. the system is either a product OR a safety component of a product covered by Union harmonization laws under Annex I of the AI Act, AND
+
+2. That product or safety component is required to undergo a third party conformity assessment under that Union harmonized law 
+
+Note: Please remember that the system can either be a product by itself OR a safety component of a product
+
+Note: Additional context about "safety component":
+
+A component is considered a "safety component" if EITHER: 
+- It fulfills a safety function for a product or system OR 
+- Its failure or malfunctioning endangers the health and safety of persons 
+
+Note: Components used solely for cybersecurity purposes are NOT considered safety components.
+
+<Union harmonization laws under Annex I of the AI Act>
+
+The list of Union harmonization laws is as follows: 
+
+Section A (New Legislative Framework): 
+●	Machinery Directive (2006/42/EC) 
+●	Toy Safety Directive (2009/48/EC) 
+●	Recreational Craft Directive (2013/53/EU) 
+●	Lifts Directive (2014/33/EU) 
+●	ATEX Directive (2014/34/EU) - Equipment for explosive atmospheres 
+●	Radio Equipment Directive (2014/53/EU) 
+●	Pressure Equipment Directive (2014/68/EU) 
+●	Cableway Installations Regulation (2016/424) 
+●	Personal Protective Equipment Regulation (2016/425) 
+●	Gas Appliances Regulation (2016/426) 
+●	Medical Devices Regulation (2017/745) 
+●	In Vitro Diagnostic Medical Devices Regulation (2017/746) 
+
+Section B: 
+●	Civil Aviation Security Regulation (300/2008) 
+●	Two/Three-Wheel Vehicles Regulation (168/2013) 
+●	Agricultural/Forestry Vehicles Regulation (167/2013) 
+●	 Marine Equipment Directive (2014/90/EU) 
+●	Rail System Interoperability Directive (2016/797) 
+●	Motor Vehicles  Market Surveillance Regulations (2018/858)  and Motor Vehicles Type Approval Regulation (2019/2144)   
+●	Civil Aviation/EASA Regulation (2018/1139)
+
+</Union harmonization laws under Annex I of the AI Act>
+ 
+</Criteria_for_Annex_I_High_Risk_Systems>
+
+<Criteria_for_Annex_III_High_Risk_Systems>
+
+Standalone System Assessment (Annex III high-risk):
+
+Does the system's purpose align with any of these areas in Annex III of the AI Act:
+
+a) Biometric Identification & Categorization:
+- Remote biometric identification systems
+- Biometric categorization systems based on sensitive or protected attributes
+- Emotion recognition systems
+(Note: Excludes 1:1 verification/authentication systems)
+
+b) Critical Infrastructure:
+- Safety components in management or operation of critical digital infrastructure, road traffic, or in the supply of water, gas, heating or electricity.
+- Additional explanation: Safety components of critical infrastructure, including critical digital infrastructure, are systems used to directly protect the physical integrity of critical infrastructure or health and safety of persons and property but which are not necessary in order for the system to function.
+-Additional explanation: “critical digital infrastructure, road traffic, or in the supply of water, gas, heating or electricity” constitute an exhaustive list. This would not cover, for example, safety components in products like vehicles. 
+- Example: Systems for monitoring water pressure or fire alarm controlling systems in cloud computing centres are high risk
+(Note: Excludes systems for the sole purpose of cybersecurity)
+
+c) Education/Training:
+- Systems for determining access/admission
+- Systems for evaluating learning outcomes or steer learning process
+- Systems for assessing education levels
+- Systems for monitoring student behavior during tests
+
+d) Employment/Worker Management:
+- Recruitment and selection systems, including systems for the targeted placing of job advertisements
+- Systems for promotion/termination decisions
+- Task allocation systems based on individual behaviour or personal traits or characteristics
+- Performance monitoring systems
+
+e) Essential Services Access:
+- Public assistance benefit evaluation systems
+- Creditworthiness assessment systems for natural persons (Note: This does not include AI systems used for the purpose of detecting financial fraud)
+- Systems used for risk assessment and pricing in relation to natural persons in the case of life and health insurance
+- Emergency service dispatch/prioritization systems
+
+f) Law Enforcement:
+- Systems that assess the risk of a person becoming a victim of a crime 
+- Lie detection/similar tools
+- Evidence reliability evaluation
+- Systems that assess the risk of a person committing a crime or to assess personality traits and characteristics or past criminal behaviour of natural persons or groups
+- Natural person profiling systems
+
+g) Migration/Asylum/Border Control:
+- Lie detection tools
+- Risk assessment systems
+- Document/evidence verification systems
+- Border monitoring/surveillance systems
+
+h) Justice/Democratic Processes:
+- Systems assisting judicial decisions
+- Systems influencing voting behavior/election outcomes
+(Note: Excludes administrative campaign management tools)
+
+3. Exception Analysis:
+If the system falls under an Annex III area, but it qualifies for any of the following exceptions, it should not be considered high-risk:
+
+a) Narrow Procedural Task:
+- Does it only transform data formats?
+- Does it only classify/categorize documents?
+- Does it only detect duplicates?
+
+b) Improvement of Human Activity:
+- Does it only enhance previously completed work?
+- Does it only provide an additional layer to human activity?
+- Example: Improving language in drafted documents
+
+c) Pattern Detection:
+- Does it only identify patterns in previous decisions?
+- Is it used only for ex-post analysis?
+- Does it require human review?
+- Example: Analyzing grading patterns for inconsistencies
+
+d) Preparatory Tasks:
+- Is it limited to file handling/indexing?
+- Does it only process/link data?
+- Is it only used for translation?
+
+Important: These exceptions do not apply if the system performs profiling of natural persons.
+
+</Criteria_for_Annex_III High_Risk_Systems>
+</Instructions_for_High-Risk_Systems>
+ 
+<Instructions_for_Systems_with_Transparency_Obligations>
+
+To help determine if my AI system is classified as having transparency obligations under the EU AI Act, please analyze the following information:
+Key Categories Requiring Transparency:
+1.	Systems Interacting with Natural Persons (Art 50(1))
+●	Applies when there's a risk that people might believe they're interacting with a human instead of an AI system
+●	Exception: When it's obvious from the circumstances/context
+●	Exception: Law enforcement systems for detecting/preventing crime
+●	Example: AI chatbots, virtual assistants
+
+2.	Systems Generating Synthetic Content (Art 50(2))
+●	Covers AI systems generating audio, image, video, or text content
+●	Exception: Systems only performing assistive function for standard editing
+●	Exception: Systems not substantially altering input data
+●	Example: Generative AI applications such as Image generators or LLM based products
+
+3.	Emotion Recognition Systems (Art 50(3))
+●	Systems identifying/inferring emotions or intentions based on biometric data
+●	Example: Systems analyzing facial expressions for emotional states
+
+4.	Biometric Categorization Systems (Art 50(3))
+●	Systems categorizing people based on biometric data
+●	Example: Systems categorizing people by age, gender, or other characteristics
+
+5.	Deep Fakes/Manipulated Content (Art 50(4))
+●	Content resembling existing persons/places that appears authentic
+●	Exception: Creative/artistic/satirical content (requires different disclosure approach)
+●	Exception: AI-generated text that undergoes human review/editorial control
+●	Example: AI-generated videos of real people
+
+</Instructions_for_Systems_with_Transparency_Obligations>
+
+</System_prompt>
+
+
+
+
+
+
+
+
+During this analysis, do not make the classification based on your assumptions about these risk classes.  
+
+Please classify a given AI use case into **exactly** one of the following categories based on the EU AI Act’s risk classification rules: 
+
+1)	Prohibited AI system
+2)	High-risk AI system under Annex I
+3)	High-risk AI system under Annex III
+4)	System with transparency obligations
+5)	High-risk AI system with transparency obligations
+6)	Low-risk AI system
+
+
+
+AI Use Case:
+
+Use Case Description: 
+
+Risk Classification: Please return **exactly** one of the following 6 classifications: 
+1.	Prohibited AI system
+2.	High-risk AI system under Annex I
+3.	High-risk AI system under Annex III
+4.	System with transparency obligations
+5.	High-risk AI system with transparency obligations
+6.	Low-risk AI system
+
+Reason: [Provide a justification based on the relevant annexes and clauses from the instructions above. Clearly explain why the use case falls under the chosen classification.]
+
+Requires Additional Information: [Answer "Yes" or "No". If "Yes", specify exactly what additional information is needed to classify this use case. Please definitely answer “Yes” you are unable to conclusively determine if a product meets the requirements set out in <Instructions_for_Prohibited_Systems>, <Instructions for_High-Risk_Systems>, or <Instructions_for_Systems_with_Transparency_Obligations>]
+
+What additional Information: [Please describe what information you would need to make a conclusive determination]
+
+ 
+</Instructions> 
+
