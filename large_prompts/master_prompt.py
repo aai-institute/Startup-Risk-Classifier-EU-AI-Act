@@ -294,14 +294,14 @@ AI Use Case: <Put the name of the AI Use Case here>
 Use Case Description: <Put the description of the use case here along with the AI process used and the type of models used, all in one paragraph style. No subheadings or bullet points>  
 Risk Classification: Please return *exactly* one of the following classifications: 
 
-1. Prohibited AI system  
-2. High-risk AI system under Annex I  
-3. High-risk AI system under Annex III  
-4. High-risk AI system with transparency obligations  
-5. System with transparency obligations  
-6. Low-risk AI system
+Prohibited AI system  
+High-risk AI system under Annex I  
+High-risk AI system under Annex III  
+High-risk AI system with transparency obligations  
+System with transparency obligations  
+Low-risk AI system
 
-Reason: <Provide a detailed justification which shows that you have followed all the steps for the classification. Cite the relevant clauses and annexes to support your justification.>
+Reason: <Provide a detailed justification which shows that you have followed all the steps for the classification. Cite the relevant clauses and annexes to support your justification. Show your reasoning process for each step defined above and how you arrived at the final classification.>
 
 Requires Additional Information: <Answer "Yes" or "No" only. You should require this information only in exceptional cases where you cannot reasonably make a classification.>
 
