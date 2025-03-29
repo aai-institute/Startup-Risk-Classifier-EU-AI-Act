@@ -1,15 +1,20 @@
 new-env/
+custom-env/
 .env
 *.ipynb
+!Excel Tabs.ipynb
 *.xlsx
 *.docx
 *.csv
 *.pyc
 datasets/
-__pycache__/
+*/__pycache__/
 Previous Results/
 Excel Files/
 All Results/
 commands.txt
 Local Input
 Local Output
+
+models/
+!ollama/*.ipynb
