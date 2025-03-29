@@ -232,12 +232,12 @@ def prompt_approach(classification_model_name, web_search_model, sheet, output_s
 
 if __name__ == "__main__":
 
-    startups_file = "Local Output/All Use Cases Combined.xlsx"
+    startups_file = "Input.xlsx"
     sheet = load_startups_excel(startups_file)
 
     output_sheet, output_wb = create_results_file()
 
-    output_filename = "sssFixed Use Cases.xlsx"
+    output_filename = "Fixed Use Cases part 2.xlsx"
 
     prompt_approach(classification_model_name='chatgpt-4o-latest', web_search_model="gpt-4o-search-preview", sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, output_filename=output_filename)
     

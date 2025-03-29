@@ -2,5 +2,6 @@
     "prettier.bracketSameLine": true,
     "html.format.wrapLineLength": 120,
     "prettier.printWidth": 350,
-    "notebook.output.wordWrap": true
+    "notebook.output.wordWrap": true,
+    "editor.wordWrap": "on"
 }
