@@ -48,6 +48,20 @@ class ChatGPT():
             elif self.__model_name == "deepseek-reasoner":
                 params["max_tokens"] = 8192
 
+            elif self.__model_name == "gpt-4o-search-preview":
+                params["web_search_options"] = {
+                    "user_location": {
+                        "type": "approximate",
+                        "approximate": {
+                            "country": "DE",
+                            "city": "Berlin",
+                            "region": "Berlin",
+                            "timezone": "Europe/Berlin",
+                        }
+                    },
+                    "search_context_size": 'high'
+                }
+
             response = self.__client.chat.completions.create(**params)
 
             answer = response.choices[0].message.content.strip()

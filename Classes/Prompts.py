@@ -29,6 +29,11 @@ class Prompts():
 
 
     def fix_raw_use_cases(self, raw_use_cases):
-        fixed_use_cases = f"Rewrite all the following text. Make sure there are no stylings or numbered headings for example # or * etc. If the content is inside an array, convert it to plain text. In the 'Use Case Description' add the 'AI Process Used' inside it so that its all one paragraph for the description. Leave the 'Type of Models Used' part out. Each section must always be on a new line and each use case block must be separated by 4 new lines.\n\n\n\n{raw_use_cases}"
+        fixed_use_cases = f"Rewrite all the following text. Make sure there are no stylings or numbered headings or formattings with # or * or - etc. If the content is inside an array, convert it to plain text. Remove all url citations if found. Each section must always be on a new line and each use case block must be separated by 4 new lines.\n\n\n\n{raw_use_cases}"
         
         return fixed_use_cases
+    
+    def generate_use_case_gpt(self, url):
+        generated_use_cases = f"{self.__use_english_prompt} Find out as much as you can about this company: {url} Give detailed AI use cases of this company. Leave out intros and outros, and focus only on AI use cases. Use the following format for each identified AI use case: AI Use Case: <name of the use case>\nUse Case Description: <detailed information about the use case>\n\n\nIn the description focus on these points: Intended purpose, Deployment context/sector, Level of autonomy, Impact on individuals, Types of data used, User type, Adaptivity/learning in deployment, Safety-critical nature of system. Use the information from the website and also use your own knowledge if you already know about the company. Always respond in plain text only without any markdown formatting like *, #, - etc. If you cannot find any information, respond with 'No information found' and no other text."
+        
+        return generated_use_cases

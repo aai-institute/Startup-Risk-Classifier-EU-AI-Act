@@ -148,7 +148,7 @@ def extract_use_cases_from_response(use_cases_full_text):
 
 
 
-def prompt_approach(classification_model_name, sheet, output_sheet, output_wb, output_filename):
+def prompt_approach(classification_model_name, web_search_model, sheet, output_sheet, output_wb, output_filename):
     # Initialize the objects
     web_scraper_obj = WebScraper()
 
@@ -170,15 +170,31 @@ def prompt_approach(classification_model_name, sheet, output_sheet, output_wb, o
         prompts_obj = Prompts(TOTAL_PAGE_CRAWLS)
 
 
+        gpt_use_case_response = ""
+        for _ in range(6):
+            # Use the web search tool to generate new use cases
+            gpt_use_case_obj = ChatGPT(web_search_model, prompts_obj.generate_use_case_gpt(url), [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
+            gpt_use_case_response, input_tokens, output_tokens = gpt_use_case_obj.chat_model()
+            # Update token cost
+            web_scraper_obj.set_token_cost(input_tokens, output_tokens, web_search_model)
 
-        # Fix Use cases only
-        use_case_fix_obj = ChatGPT(classification_model_name, prompts_obj.fix_raw_use_cases(use_cases_combined), [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
-        use_case_fix_response, input_tokens, output_tokens = use_case_fix_obj.chat_model()
-        # Update token cost
-        web_scraper_obj.set_token_cost(input_tokens, output_tokens, classification_model_name)
+            if gpt_use_case_response and "No information found" not in gpt_use_case_response:
+                break
+            else:
+                print(f"\nNo Use Cases generated.Retrying...\n")
+                gpt_use_case_response = ""
+
+
+        # # Fix Use cases only
+        # use_case_fix_obj = ChatGPT(classification_model_name, prompts_obj.fix_raw_use_cases(gpt_use_case_response), [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
+        # use_case_fix_response, input_tokens, output_tokens = use_case_fix_obj.chat_model()
+        # # Update token cost
+        # web_scraper_obj.set_token_cost(input_tokens, output_tokens, classification_model_name)
         
         
-        save_to_excel(output_sheet, output_wb, startup_name, url, redirect_url, use_cases_combined, use_case_fix_response, web_scraper_obj.get_token_cost(), output_filename)
+        save_to_excel(output_sheet, output_wb, startup_name, url, redirect_url, use_cases_combined, gpt_use_case_response, web_scraper_obj.get_token_cost(), output_filename)
+
+        # return
 
 
 
@@ -221,9 +237,9 @@ if __name__ == "__main__":
 
     output_sheet, output_wb = create_results_file()
 
-    output_filename = "Fixed Use Cases.xlsx"
+    output_filename = "sssFixed Use Cases.xlsx"
 
-    prompt_approach(classification_model_name='chatgpt-4o-latest', sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, output_filename=output_filename)
+    prompt_approach(classification_model_name='chatgpt-4o-latest', web_search_model="gpt-4o-search-preview", sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, output_filename=output_filename)
     
 
 
