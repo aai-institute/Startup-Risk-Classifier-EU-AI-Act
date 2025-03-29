@@ -1,4 +1,5 @@
 new-env/
+custom-env/
 .env
 *.ipynb
 !Excel Tabs.ipynb
@@ -15,4 +16,5 @@ commands.txt
 Local Input
 Local Output
 
-!client.ipynb
+models/
+!ollama/*.ipynb
