@@ -291,7 +291,7 @@ Step 7: If the system does not meet any of the criteria for any of the previous 
 Format your answer in the following manner:
 
 AI Use Case: <Put the name of the AI Use Case here>  
-Use Case Description: <Put the description of the use case here along with the AI process used and the type of models used, all in one paragraph style. No subheadings or bullet points>  
+Use Case Description: <Put the description of the use case here>  
 Risk Classification: Please return *exactly* one of the following classifications: 
 
 Prohibited AI system  

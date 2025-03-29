@@ -27,3 +27,8 @@ class Prompts():
         
         return combined_use_cases
 
+
+    def fix_raw_use_cases(self, raw_use_cases):
+        fixed_use_cases = f"Rewrite all the following text. Make sure there are no stylings or numbered headings for example # or * etc. If the content is inside an array, convert it to plain text. In the 'Use Case Description' add the 'AI Process Used' inside it so that its all one paragraph for the description. Leave the 'Type of Models Used' part out. Each section must always be on a new line and each use case block must be separated by 4 new lines.\n\n\n\n{raw_use_cases}"
+        
+        return fixed_use_cases
