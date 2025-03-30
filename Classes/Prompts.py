@@ -28,8 +28,9 @@ class Prompts():
         return combined_use_cases
 
 
+    # check Geoinsight.ai.
     def fix_raw_use_cases(self, raw_use_cases):
-        fixed_use_cases = f"Rewrite all the following text. Make sure there are no stylings or numbered headings or formattings with # or * or - etc. If the content is inside an array, convert it to plain text. Remove all url citations if found. Each section must always be on a new line and each use case block must be separated by 4 new lines.\n\n\n\n{raw_use_cases}"
+        fixed_use_cases = f"Rewrite all the following text. Make sure there are no stylings or numbered headings or any type of formattings such as but not limited to # or * or - etc. If the content is inside an array, convert it to plain text. All text must in paragraph style only. Remove all url citations if found. There should only be two sections in the output for each use case, 'AI Use Case:' and 'Use Case Description:' If you see other sections, they must be part of the use case description. Start with the name of the company in each description if its available in the content. Each section must always be on a new line and each use case block must be separated by 4 new lines.\n\n\n\n{raw_use_cases}"
         
         return fixed_use_cases
     
