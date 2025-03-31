@@ -28,7 +28,6 @@ class Prompts():
         return combined_use_cases
 
 
-    # check Geoinsight.ai.
     def fix_raw_use_cases(self, raw_use_cases):
         fixed_use_cases = f"Rewrite all the following text. Make sure there are no stylings or numbered headings or any type of formattings such as but not limited to # or * or - etc. If the content is inside an array, convert it to plain text. All text must in paragraph style only. Remove all url citations if found. There should only be two sections in the output for each use case, 'AI Use Case:' and 'Use Case Description:' If you see other sections, they must be part of the use case description. Start with the name of the company in each description if its available in the content. Each section must always be on a new line and each use case block must be separated by 4 new lines.\n\n\n\n{raw_use_cases}"
         
@@ -38,3 +37,9 @@ class Prompts():
         generated_use_cases = f"{self.__use_english_prompt} Find out as much as you can about this company: {url} Give detailed AI use cases of this company. Leave out intros and outros, and focus only on AI use cases. Use the following format for each identified AI use case: AI Use Case: <name of the use case>\nUse Case Description: <detailed information about the use case>\n\n\nIn the description focus on these points: Intended purpose, Deployment context/sector, Level of autonomy, Impact on individuals, Types of data used, User type, Adaptivity/learning in deployment, Safety-critical nature of system. Use the information from the website and also use your own knowledge if you already know about the company. Always respond in plain text only without any markdown formatting like *, #, - etc. If you cannot find any information, respond with 'No information found' and no other text."
         
         return generated_use_cases
+
+
+    def prepare_AI_Act_prompt(self, master_prompt, single_use_case):
+
+        additional_format = f"""\nDo not give any intros or outros. Respond in plain text string only (no unusual arrays), without any formatting f.e. no bold or ## headings or numbered headings. The following is the AI Use case of a startup you have to classify:\n\n{single_use_case}"""
+        return master_prompt + additional_format

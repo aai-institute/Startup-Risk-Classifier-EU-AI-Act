@@ -15,6 +15,7 @@ import anthropic
 # Local Imports
 from Classes import ChatGPT, Prompts, WebScraper, TextExtractor
 from large_prompts.master_prompt import master_prompt
+from re_functions.use_case_extractor import extract_use_cases
 
 
 # Load environment variables
@@ -23,13 +24,13 @@ load_dotenv()
 # Constants
 TOTAL_PAGE_CRAWLS = 4
 
-def claude_api(prompt):
+def claude_api(model, prompt):
     try:
         client = anthropic.Anthropic(
-            api_key=os.getenv("ANTHROPIC_KEY")
+            api_key=os.getenv("WORK_ANTHROPIC_KEY")
         )
         message = client.messages.create(
-            model="claude-3-7-sonnet-20250219",
+            model=model,
             max_tokens=8192,
             messages=[
                 {"role": "user", "content": prompt}
@@ -72,10 +73,12 @@ def read_docx(file_path):
 
 def prepare_AI_Act_prompt(master_prompt, all_ai_use_cases):
 
-    additional_format = f"""\nDo not give any intros or outros. Respond in plain text string only (no unusual arrays), without any formatting f.e. no bold or ## headings or numbered headings. The following are the AI Use cases of the startup you have to classify:\n\n{all_ai_use_cases}"""
+    # additional_format = f"""\nDo not give any intros or outros. Respond in plain text string only (no unusual arrays), without any formatting f.e. no bold or ## headings or numbered headings. The following are the AI Use cases of the startup you have to classify:\n\n{all_ai_use_cases}"""
 
-    # print(file_content)  # Output all content
-    return master_prompt + additional_format
+    # # print(file_content)  # Output all content
+    # return master_prompt + additional_format
+
+    pass
 
 def traverse_links(web_scraper_obj, links, model_name, content_shortener_model, ai_use_cases, prompts_obj):
     
@@ -227,18 +230,121 @@ def prompt_approach(classification_model_name, web_search_model, sheet, output_s
         web_scraper_obj.reset_redirect_url()
 
 
+def multiple_model_approach(chatgpt_model, claude_model):
+    # Allowed categories
+    allowed_categories = {
+        'Prohibited AI system',
+        'High-risk AI system under Annex I',
+        'High-risk AI system under Annex III',
+        'High-risk AI system with transparency obligations',
+        'System with transparency obligations',
+        'Low-risk AI system',
+        'Uncertain'
+    }
+
+    # Initialize the objects
+    web_scraper_obj = WebScraper()
+    prompts_obj = Prompts(TOTAL_PAGE_CRAWLS)
+
+
+    with open('datasets/Use Cases/3_use_cases.json', 'r') as file:
+        json_data = json.load(file)
+
+        for index, company in enumerate(json_data['companies']):
+            startup_name = company['company_name']
+            print(f"{index}: {startup_name}")
+
+            for use_case in company['use_cases']:
+                # print(use_case)
+                use_case_string = f"AI Use Case: {use_case["use_case_name"]}\nUse Case Description: {use_case["use_case_description"]}"
+                # print(use_case_string)
+
+                master_full_prompt = prompts_obj.prepare_AI_Act_prompt(master_prompt, use_case_string)
+                # print(f"Master Prompt: {master_full_prompt}")
+
+
+                # # Pass to chatgpt-latest
+                # chat_use_case_obj = ChatGPT(chatgpt_model, master_full_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
+                # chatgpt_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
+                # # Update token cost
+                # web_scraper_obj.set_token_cost(input_tokens, output_tokens, chatgpt_model)
+
+                # print(f"\n\nFrom ChatGPT:\n{chatgpt_use_case_response}")
+                
+
+                test_strings.test_string_1 += "\n\n########END OF USE CASE########\n\n"
+
+
+                # # Pass to Claude model
+                # claude_use_case_response, input_tokens, output_tokens = claude_api(claude_model, master_full_prompt)
+                # # Update token cost
+                # web_scraper_obj.set_token_cost(input_tokens, output_tokens, claude_model)
+
+                # print(f"\n\n\nFrom Claude:\n\n{claude_use_case_response}")
+
+
+                test_strings.test_string_2 += "\n\n########END OF USE CASE########\n\n"
+
+                final_string = f"{test_strings.test_string_1}{test_strings.test_string_2}"
+
+
+                # Get the combined json from all models
+                result_json = extract_use_cases(use_case, final_string)
+                # print(f"Result JSON: {result_json}")
+
+                with open('test.json', 'w') as json_file:
+                    json.dump(result_json, json_file, indent=4)
+                
+
+                # Create a dictionary to store the votes
+                votings = {}
+                for model_use_case in result_json:
+                    risk_classification = model_use_case["Risk Classification"]
+                    if risk_classification not in allowed_categories:
+                        risk_classification = "Parse Error - Classification not in allowed_categories"
+                    
+                    if risk_classification in votings:
+                        votings[risk_classification] += 1
+                    else:
+                        votings[risk_classification] = 1
+
+                    
+                # Find the classification with the most votes.
+                max_votes = 0
+                final_classification = ""
+                for classification, votes in votings.items():
+                    if votes > max_votes:
+                        max_votes = votes
+                        final_classification = classification
+
+                # print(f"Final Classification: {final_classification}")
+
+                # Get the use case with the final classification
+                filtered_use_cases = [model_use_case for model_use_case in result_json if model_use_case["Risk Classification"] == final_classification]
+                # Get the use case with the longest reason
+                longest_reasoned_use_case = max(filtered_use_cases, key=lambda x: len(x["Reason"]))
+
+                print(longest_reasoned_use_case)
+
+                break
+
+
+            
+            break
+
+
+import test_strings
 
 if __name__ == "__main__":
     # web_search_model="gpt-4o-search-preview"
 
-    startups_file = "datasets/Use Cases/3. All GPT Formatted Final Use Cases.xlsx"
-    sheet = load_startups_excel(startups_file)
+    # startups_file = "datasets/Use Cases/3. All GPT Formatted Final Use Cases.xlsx"
+    # sheet = load_startups_excel(startups_file)
 
-    output_sheet, output_wb = create_results_file()
+    # output_sheet, output_wb = create_results_file()
 
-    output_filename = "Formatted Use Cases.xlsx"
+    # output_filename = "Formatted Use Cases.xlsx"
 
-    prompt_approach(classification_model_name='chatgpt-4o-latest', web_search_model="", sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, output_filename=output_filename)
+    # prompt_approach(classification_model_name='chatgpt-4o-latest', web_search_model="", sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, output_filename=output_filename)
     
-
-
+    multiple_model_approach(chatgpt_model="chatgpt-4o-latest", claude_model="claude-3-7-sonnet-20250219")

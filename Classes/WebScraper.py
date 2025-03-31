@@ -33,6 +33,10 @@ class WebScraper(LinkWorker):
             input_cost = (input_tokens / 1000) * 0.0025
             output_cost = (output_tokens / 1000) * 0.01
             self.__total_token_cost += input_cost + output_cost
+        elif model_name == "deepseek-reasoner":
+            input_cost = (input_tokens / 1000) * 0.00055
+            output_cost = (output_tokens / 1000) * 0.00219
+            self.__total_token_cost += input_cost + output_cost
         else:
             raise ValueError("Model name not recognized. Token cost not calculated.")
 
