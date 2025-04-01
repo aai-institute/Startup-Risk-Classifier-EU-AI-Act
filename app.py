@@ -28,7 +28,7 @@ TOTAL_PAGE_CRAWLS = 4
 def claude_api(model, prompt):
     try:
         client = anthropic.Anthropic(
-            api_key=os.getenv("WORK_ANTHROPIC_KEY")
+            api_key=os.getenv("MY_ANTHROPIC_KEY")
         )
         message = client.messages.create(
             model=model,
@@ -236,20 +236,20 @@ def prompt_approach(classification_model_name, web_search_model, sheet, output_s
 from openpyxl import Workbook
 
 
-def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_model):
+def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_model, mistral_model):
     # Create a workbook and select the active worksheet
     wb = Workbook()
     ws = wb.active
     workbook_filename = "All_Models_Results.xlsx"
 
     # Add a header row
-    ws.append(["Generated Text"])
+    ws.append(["Generated Text", "Token Cost ($)"])
     wb.save(workbook_filename)
 
     row_num = 2
 
     # Allowed categories
-    allowed_categories = {
+    allowed_categories = [
         'Prohibited AI system',
         'High-risk AI system under Annex I',
         'High-risk AI system under Annex III',
@@ -257,7 +257,7 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
         'System with transparency obligations',
         'Low-risk AI system',
         'Uncertain'
-    }
+    ]
 
     # Initialize the objects
     web_scraper_obj = WebScraper()
@@ -283,34 +283,34 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                 # print(f"Master Prompt: {master_full_prompt}")
 
 
-                # # Pass to chatgpt-latest
-                # chat_use_case_obj = ChatGPT(chatgpt_model, master_full_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
-                # chatgpt_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
-                # # Update token cost
-                # web_scraper_obj.set_token_cost(input_tokens, output_tokens, chatgpt_model)
+                # Pass to chatgpt-latest
+                chat_use_case_obj = ChatGPT(chatgpt_model, master_full_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
+                chatgpt_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
+                # Update token cost
+                web_scraper_obj.set_token_cost(input_tokens, output_tokens, chatgpt_model)
 
-                # chatgpt_use_case_response += "\n\n########END OF USE CASE########\n\n"
+                chatgpt_use_case_response += "\n\n########END OF USE CASE########\n\n"
                 # print(f"\n\nFrom ChatGPT:\n{chatgpt_use_case_response}")
                 
 
 
-                # # Pass to Claude model
-                # claude_use_case_response, input_tokens, output_tokens = claude_api(claude_model, master_full_prompt)
-                # # Update token cost
-                # web_scraper_obj.set_token_cost(input_tokens, output_tokens, claude_model)
+                # Pass to Claude model
+                claude_use_case_response, input_tokens, output_tokens = claude_api(claude_model, master_full_prompt)
+                # Update token cost
+                web_scraper_obj.set_token_cost(input_tokens, output_tokens, claude_model)
 
-                # claude_use_case_response += "\n\n########END OF USE CASE########\n\n"                
+                claude_use_case_response += "\n\n########END OF USE CASE########\n\n"                
                 # print(f"\n\n\nFrom Claude:\n\n{claude_use_case_response}")
 
 
 
                 # Pass to Deepseek-reasoner
-                # deepseek_use_case_obj = ChatGPT(deepseek_model, master_full_prompt, [], OpenAI(api_key=os.getenv("DEEPSEEK_KEY"), max_retries=5, base_url="https://api.deepseek.com"))
-                # deepseek_use_case_response, input_tokens, output_tokens = deepseek_use_case_obj.chat_model()
-                # # Update token cost
-                # web_scraper_obj.set_token_cost(input_tokens, output_tokens, deepseek_model)
+                deepseek_use_case_obj = ChatGPT(deepseek_model, master_full_prompt, [], OpenAI(api_key=os.getenv("DEEPSEEK_KEY"), max_retries=5, base_url="https://api.deepseek.com"))
+                deepseek_use_case_response, input_tokens, output_tokens = deepseek_use_case_obj.chat_model()
+                # Update token cost
+                web_scraper_obj.set_token_cost(input_tokens, output_tokens, deepseek_model)
 
-                # deepseek_use_case_response += "\n\n########END OF USE CASE########\n\n"
+                deepseek_use_case_response += "\n\n########END OF USE CASE########\n\n"
                 # print(f"\n\n\nFrom Deepseek:\n\n{deepseek_use_case_response}")
 
 
@@ -321,21 +321,29 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                 web_scraper_obj.set_token_cost(input_tokens, output_tokens, gemini_model)
                 
                 gemeni_response += "\n\n########END OF USE CASE########\n\n"
-                print(f"\n\n\nFrom Gemini:\n\n{gemeni_response}")
+                # print(f"\n\n\nFrom Gemini:\n\n{gemeni_response}")
 
 
-                
+
+                # Pass to mistral model
+                mistral_response, input_tokens, output_tokens = mistral_api(mistral_model, master_full_prompt)
+                # Update token cost
+                web_scraper_obj.set_token_cost(input_tokens, output_tokens, mistral_model)
+
+                mistral_response += "\n\n########END OF USE CASE########\n\n"
+                # print(f"\n\n\nFrom Mistral:\n\n{mistral_response}")
 
 
-                test_strings.test_string_1 += "\n\n########END OF USE CASE########\n\n"
-                test_strings.test_string_2 += "\n\n########END OF USE CASE########\n\n"
-                test_strings.test_string_3 += "\n\n########END OF USE CASE########\n\n"
-                test_strings.test_string_4 += "\n\n########END OF USE CASE########\n\n"
-                test_strings.test_string_5 += "\n\n########END OF USE CASE########\n\n"
+
+                # test_strings.test_string_1 += "\n\n########END OF USE CASE########\n\n"
+                # test_strings.test_string_2 += "\n\n########END OF USE CASE########\n\n"
+                # test_strings.test_string_3 += "\n\n########END OF USE CASE########\n\n"
+                # test_strings.test_string_4 += "\n\n########END OF USE CASE########\n\n"
+                # test_strings.test_string_5 += "\n\n########END OF USE CASE########\n\n"
 
 
-                final_string = f"{test_strings.test_string_1}{test_strings.test_string_2}{test_strings.test_string_3}{test_strings.test_string_4}{test_strings.test_string_5}"
-                # final_string = f"{chatgpt_use_case_response}{claude_use_case_response}"
+                # final_string = f"{test_strings.test_string_1}{test_strings.test_string_2}{test_strings.test_string_3}{test_strings.test_string_4}{test_strings.test_string_5}"
+                final_string = f"{chatgpt_use_case_response}{claude_use_case_response}{deepseek_use_case_response}{gemeni_response}{mistral_response}"
 
 
                 # Get the combined json from all models
@@ -347,7 +355,8 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                 
 
                 # Create a dictionary to store the votes and store individual classifications from all models
-                voters = ["Chatgpt Model", "Claude Model", "DeepSeek Reasoner", "Gemini 2.0 Flash Thinker", "Mistral"]
+                # claude-3-7-sonnet
+                voters = ["ChatGPT 4o", "Claude 3.7 Sonnet", "DeepSeek Reasoner", "Gemini 2.0 Flash Thinker", "Mistral Large"]
                 votings = {}
                 classifications_list = []
                 # Iterate through the result JSON and count votes for each classification
@@ -371,9 +380,12 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                 # Find the classification with the most votes.
                 max_votes = max(votings.values())
                 classifications_with_max_votes = [classification for classification, votes in votings.items() if votes == max_votes]
-                # If there are multiple classifications with the same max votes, choose the least risky one
+                # 3. If tie, pick least risky from the tie group
                 if len(classifications_with_max_votes) > 1:
-                    classifications_with_max_votes.sort(key=lambda x: list(allowed_categories).index(x) if x in allowed_categories else len(allowed_categories))
+                    classifications_with_max_votes.sort(
+                        key=lambda x: allowed_categories.index(x) if x in allowed_categories else -1,
+                        reverse=True
+                    )
                 final_classification = classifications_with_max_votes[0]
 
                 # print(f"Votings: {votings}")
@@ -400,9 +412,10 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
 
 
                 # Attach the distribution to the longest reasoned use case
-                longest_reasoned_use_case["Model Distribution"] = ""
-                for k,v in model_distribution.items():
-                    longest_reasoned_use_case["Model Distribution"] += f"{k}: {v}, "
+                longest_reasoned_use_case["Model Distribution"] = "\n"
+                for index, (k,v) in enumerate(model_distribution.items()):
+                    longest_reasoned_use_case["Model Distribution"] += f"{k} => {v}"
+                    longest_reasoned_use_case["Model Distribution"] += "\n" if index < len(model_distribution) - 1 else ""
                 # Attach which model it was classified from
                 longest_reasoned_use_case["Chosen Model"] = voters[longest_reasoned_use_case_index]
 
@@ -414,13 +427,14 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                 longest_reasoned_use_case_string += "\n\n########END OF CLASSIFICATION########\n\n\n\n"
 
                 # print(f"Model Distribution:\n{model_distribution_string}")
-                print(f"{longest_reasoned_use_case_string}")
+                # print(f"{longest_reasoned_use_case_string}")
 
-                break
+                # break
 
 
             # Write the final use case string to Excel
             ws.cell(row=row_num, column=1, value=longest_reasoned_use_case_string)
+            ws.cell(row=row_num, column=2, value=web_scraper_obj.get_token_cost())
             wb.save(workbook_filename)
             row_num += 1
 
@@ -443,7 +457,8 @@ if __name__ == "__main__":
 
     # prompt_approach(classification_model_name='chatgpt-4o-latest', web_search_model="", sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, output_filename=output_filename)
     
-    # multiple_model_approach(chatgpt_model="chatgpt-4o-latest", claude_model="claude-3-7-sonnet-20250219", deepseek_model="deepseek-reasoner", gemini_model="gemini-2.0-flash-thinking-exp-01-21")
+    multiple_model_approach(chatgpt_model="chatgpt-4o-latest", claude_model="claude-3-7-sonnet-20250219", deepseek_model="deepseek-reasoner", gemini_model="gemini-2.0-flash-thinking-exp-01-21", mistral_model="mistral-large-latest")
+    
 
     pass
 

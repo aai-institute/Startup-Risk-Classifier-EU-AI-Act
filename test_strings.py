@@ -1,10 +1,10 @@
 test_string_1 = """
 AI Use Case: Total Store Simulation - Chatpgt 
 Use Case Description: 10AI employs AI to simulate in-store customer behavior, allowing retailers to predict the impact of store layout changes on overall performance. This solution is deployed in the retail sector, providing a virtual environment to test different store configurations before actual implementation. The system operates with a high level of autonomy, utilizing machine learning algorithms trained on real-world data to forecast shopper movements and interactions within the store. The primary data used includes customer flow patterns, purchase histories, and spatial layouts. The primary users are retail store designers and managers seeking to optimize store layouts for enhanced customer experience and sales performance. The AI system is adaptive, learning from new data to refine its predictions over time. This is different.
-Risk Classification: Low-risk AI system the wrong
+Risk Classification: High-risk AI system under Annex I
 
 Reason:
-Step 1: Prohibited AI System
+Step 1: High-risk AI system under Annex I and i dont know 
 - This system does not use subliminal techniques, or purposefully manipulative/deceptive mechanisms (Art. 5(1)(a)). Its purpose is forecasting and simulation for spatial layout decisions.
 - It does not exploit vulnerable groups such as children, elderly, or disadvantaged populations (Art. 5(1)(b)), but targets professionals in the retail sector.
 - It does not assign social scores or provide classification based on social behavior or personal characteristics for the purpose of unrelated treatment (Art. 5(1)(c)).
@@ -42,7 +42,7 @@ What additional Information: N/A
 test_string_2 = """
 AI Use Case: Total Store Simulation - Claude Model
 Use Case Description: 10AI employs AI to simulate in-store customer behavior, allowing retailers to predict the impact of store layout changes on overall performance. This solution is deployed in the retail sector, providing a virtual environment to test different store configurations before actual implementation. The system operates with a high level of autonomy, utilizing machine learning algorithms trained on real-world data to forecast shopper movements and interactions within the store. The primary data used includes customer flow patterns, purchase histories, and spatial layouts. The primary users are retail store designers and managers seeking to optimize store layouts for enhanced customer experience and sales performance. The AI system is adaptive, learning from new data to refine its predictions over time. While not safety-critical, the system significantly impacts business decisions and customer satisfaction by enabling data-driven store design.
-Risk Classification: Low-risk AI system
+Risk Classification: Uncertain
 
 Reason: I have analyzed this AI system by following the required steps:
 
@@ -61,8 +61,7 @@ ly (Article 50(1)), doesn't generate synthetic content (Article 50(2)), doesn't 
 egorization (Article 50(3)), and doesn't create deep fakes (Article 50(4)). Therefore, no transparency obligations apply.
 
 
-Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency oStep 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency obligations, it is classified as a "Low-risk AI system."
-bligations, it is classified as a "Low-risk AI system."
+Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency"Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency"Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency"Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency"Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency"Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency"Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency"Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency"Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency"Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency"Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency"
 
 Requires Additional Information: No
 """
@@ -72,7 +71,7 @@ Requires Additional Information: No
 test_string_3 = """
 AI Use Case: Total Store Simulation - DeepSeek Reasoner
 Use Case Description: 10AI employs AI to simulate in-store customer behavior, allowing retailers to predict the impact of store layout changes on overall performance. This solution is deployed in the retail sector, providing a virtual environment to test different store configurations before actual implementation. The system operates with a high level of autonomy, utilizing machine learning algorithms trained on real-world data to forecast shopper movements and interactions within the store. The primary data used includes customer flow patterns, purchase histories, and spatial layouts. The primary users are retail store designers and managers seeking to optimize store layouts for enhanced customer experience and sales performance. The AI system is adaptive, learning from new data to refine its predictions over time. While not safety-critical, the system significantly impacts business decisions and customer satisfaction by enabling data-driven store design.
-Risk Classification: Prohibited AI system
+Risk Classification: Low-risk AI system
 
 Reason: I have analyzed this AI system by following the required steps:
 
@@ -101,7 +100,7 @@ Requires Additional Information: No
 test_string_4 = """
 AI Use Case: Total Store Simulation - Gemini Model
 Use Case Description: 10AI employs AI to simulate in-store customer behavior, allowing retailers to predict the impact of store layout changes on overall performance. This solution is deployed in the retail sector, providing a virtual environment to test different store configurations before actual implementation. The system operates with a high level of autonomy, utilizing machine learning algorithms trained on real-world data to forecast shopper movements and interactions within the store. The primary data used includes customer flow patterns, purchase histories, and spatial layouts. The primary users are retail store designers and managers seeking to optimize store layouts for enhanced customer experience and sales performance. The AI system is adaptive, learning from new data to refine its predictions over time. While not safety-critical, the system significantly impacts business decisions and customer satisfaction by enabling data-driven store design.
-Risk Classification: Prohibited AI system
+Risk Classification: High-risk AI system under Annex I
 
 Reason: I have analyzed this AI system by following the required steps:
 
@@ -132,7 +131,7 @@ Requires Additional Information: No
 test_string_5 = """
 AI Use Case: Total Store Simulation - Mistral
 Use Case Description: 10AI employs AI to simulate in-store customer behavior, allowing retailers to predict the impact of store layout changes on overall performance. This solution is deployed in the retail sector, providing a virtual environment to test different store configurations before actual implementation. The system operates with a high level of autonomy, utilizing machine learning algorithms trained on real-world data to forecast shopper movements and interactions within the store. The primary data used includes customer flow patterns, purchase histories, and spatial layouts. The primary users are retail store designers and managers seeking to optimize store layouts for enhanced customer experience and sales performance. The AI system is adaptive, learning from new data to refine its predictions over time. While not safety-critical, the system significantly impacts business decisions and customer satisfaction by enabling data-driven store design.
-Risk Classification: Prohibited AI system
+Risk Classification: Uncertain
 
 Reason: I have analyzed this AI system by following the required steps:
 
@@ -152,18 +151,7 @@ egorization (Article 50(3)), and doesn't create deep fakes (Article 50(4)). Ther
 
 
 Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency oStep 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency obligations, it is classified as a "Low-risk AI system."
-bligations, it is classified as a "Low-risk AI system."
-
-Gibbirsh added here
-
-Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency oStep 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency obligations, it is classified as a "Low-risk AI system."
-bligations, it is classified as a "Low-risk AI system."Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency oStep 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency obligations, it is classified as a "Low-risk AI system."
-bligations, it is classified as a "Low-risk AI system."Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency oStep 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency obligations, it is classified as a "Low-risk AI system."
-bligations, it is classified as a "Low-risk AI system."Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency oStep 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency obligations, it is classified as a "Low-risk AI system."
-bligations, it is classified as a "Low-risk AI system."Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency oStep 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency obligations, it is classified as a "Low-risk AI system."
-bligations, it is classified as a "Low-risk AI system."Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency oStep 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency obligations, it is classified as a "Low-risk AI system."
-bligations, it is classified as a "Low-risk AI system."Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency oStep 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency obligations, it is classified as a "Low-risk AI system."
-bligations, it is classified as a "Low-risk AI system."
+bligations, it is classified as a "Low-risk AI system." a
 
 Requires Additional Information: No
 """
