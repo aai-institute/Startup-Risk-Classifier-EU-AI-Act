@@ -1,28 +1,39 @@
 test_string_1 = """
 AI Use Case: Total Store Simulation  
-Use Case Description: 10AI employs AI to simulate in-store customer behavior, allowing retailers to predict the impact of store layout changes on overall performance. This solution is deployed in the retail sector, providing a virtual environment to test different store configurations before actual implementation. The system operates with a high level of autonomy, utilizing machine learning algorithms trained on real-world data to forecast shopper movements and interactions within the store. The primary data used includes customer flow patterns, purchase histories, and spatial layouts. The primary users are retail store designers and managers seeking to optimize store layouts for enhanced customer experience and sales performance. The AI system is adaptive, learning from new data to refine its predictions over time. While not safety-critical, the system significantly impacts business decisions and customer satisfaction by enabling data-driven store design.  
-Risk Classification: Low-risk AI system  
+Use Case Description: 10AI employs AI to simulate in-store customer behavior, allowing retailers to predict the impact of store layout changes on overall performance. This solution is deployed in the retail sector, providing a virtual environment to test different store configurations before actual implementation. The system operates with a high level of autonomy, utilizing machine learning algorithms trained on real-world data to forecast shopper movements and interactions within the store. The primary data used includes customer flow patterns, purchase histories, and spatial layouts. The primary users are retail store designers and managers seeking to optimize store layouts for enhanced customer experience and sales performance. The AI system is adaptive, learning from new data to refine its predictions over time. This is different.
+Risk Classification: Low-risk AI system
 
 Reason:
-Step 1 – Prohibited AI System: The system does not fall under any of the Article 5 prohibitions. It does not manipulate behavior through subliminal techniques (Art. 5(1)(a)), exploit vulnerabilities due to age/disability/social situation (Art. 5(1)(b)), perform social scoring (Art. 5(1)(c)), conduct crime risk assessment based solely on profiling or traits (Art. 5(1)(d)), engage in untargeted facial image scraping (Art. 5(1)(e)), infer emotions in the education/workplace (Art. 5(1)(f)), categorize individuals based on biometric data to derive sensitive attributes (Art. 5(1)(g)), or perform real-time remote biometric identification in public spaces for law enforcement (Art. 5(1)(h)).
+Step 1: Prohibited AI System
+- This system does not use subliminal techniques, or purposefully manipulative/deceptive mechanisms (Art. 5(1)(a)). Its purpose is forecasting and simulation for spatial layout decisions.
+- It does not exploit vulnerable groups such as children, elderly, or disadvantaged populations (Art. 5(1)(b)), but targets professionals in the retail sector.
+- It does not assign social scores or provide classification based on social behavior or personal characteristics for the purpose of unrelated treatment (Art. 5(1)(c)).
+- It does not assess crime risks or predict criminal behavior (Art. 5(1)(d)).
+- It does not use untargeted facial image scraping, emotion recognition in workplaces/education, biometric categorization by sensitive traits, or real-time remote biometric ID for law enforcement (Art. 5(1)(e)-(h)).
+⇒ Therefore, this is not a prohibited AI system.
 
-Step 2 – High-risk under Annex I: The AI system is not a safety component of a regulated product under Annex I (e.g., no medical device, machinery, vehicle, etc.). It is a simulation tool used by retailers, not covered by any Union harmonization law. Therefore, this does not apply.
+Step 2: High-risk AI system under Annex I (Product safety laws)
+- The system is not a product or safety component within the scope of Union harmonization laws such as medical device, machinery, automotive, or aviation directives.
+- It is used in retail layout design, not in sectors regulated under Annex I legislation.
+⇒ It does not qualify as a high-risk AI system under Annex I.
 
-Step 3 – High-risk under Annex III: The system does not fall under any of the high-risk categories in Annex III:
-a) Not used for biometric identification/categorization or emotion recognition.
-b) Not related to the safety of critical infrastructure.
-c) Not used in education or training.
-d) Not used for employment or worker management.
-e) Not used for determining access to essential services like credit or emergency services.
-f) Not used in law enforcement or crime prevention.
-g) Not used for migration/asylum/border control.
-h) Not used in the justice system or democratic processes.
+Step 3: High-risk AI system under Annex III
+- It is not used for biometric identification, critical infrastructure, education, employment, access to services, law enforcement, migration, or justice.
 
-Step 4 – Transparency Obligations: The system does not appear to interact directly with natural persons in a way that may cause users to mistake it for a human (Art. 50(1)), does not generate synthetic content (Art. 50(2)), and is not an emotion recognition or biometric categorization system (Art. 50(3)). It also does not create manipulated or deepfake content (Art. 50(4)).
+- The system analyzes customer behavior in commercial retail settings and supports store layout design.
+⇒ Does not fall under any high-risk domain in Annex III.
 
-Step 5 & 6 – Since the system does not fall under high-risk categories and does not trigger transparency obligations, this step does not apply.
+Step 4: Transparency Obligations
+- Art. 50(1): Interaction with natural persons – Not applicable; this system is used by professionals for simulation and prediction and does not directly interact with end-customers during operation.
+- Art. 50(2): Synthetic content – No synthetic media generation involved such as outputting manipulated image/video/text/audio resembling real events or people.
+- Art. 50(3): Emotion recognition/biometric categorization – No biometric data or emotion inference is used.
+- Art. 50(4): Deepfakes – No output of deepfake content.
+⇒ No transparency obligation applies.
 
-Final determination: None of the risk categories are met. This system is used for business process optimization via simulation and customer behavior modeling and does not have direct societal or individual high-risk impacts as defined under the AI Act.
+Step 5 and Step 6: The system is neither high-risk nor has transparency obligations.
+
+Final Step 7: Since it doesn’t fall under prohibited AI, high-risk AI under Annex I or III, and has no transparency obligations, it is therefore classified correctly as:
+Low-risk AI system.
 
 Requires Additional Information: No
 What additional Information: N/A
@@ -33,60 +44,25 @@ AI Use Case: Total Store Simulation
 Use Case Description: 10AI employs AI to simulate in-store customer behavior, allowing retailers to predict the impact of store layout changes on overall performance. This solution is deployed in the retail sector, providing a virtual environment to test different store configurations before actual implementation. The system operates with a high level of autonomy, utilizing machine learning algorithms trained on real-world data to forecast shopper movements and interactions within the store. The primary data used includes customer flow patterns, purchase histories, and spatial layouts. The primary users are retail store designers and managers seeking to optimize store layouts for enhanced customer experience and sales performance. The AI system is adaptive, learning from new data to refine its predictions over time. While not safety-critical, the system significantly impacts business decisions and customer satisfaction by enabling data-driven store design.
 Risk Classification: Low-risk AI system
 
-Reason: I have analyzed this AI use case following the step-by-step approach:
-Reason: I have analyzed this AI use case following the step-by-step approach:
+Reason: I have analyzed this AI system by following the required steps:
 
-Step 1: The system does not qualify as "Prohibited" under Article 5. It does not deploy subliminal or manipulative techniques to distort behavior causing harm (5(1)(a)), exploit vulnerabilities (5(1)(b)), perform social scoring (5(1)(c)), predict criminal behavior (5(1)(d)), perform facial scraping (5(1)(e)), recognize emotions in workplace/education (5(1)(f)), categorize based on biometric data (5(1)(g)), or perform real-time biometric identification (5(1)(h)).
+Step 1: I checked if the system should be classified as "Prohibited AI system" under Article 5. The Total Store Simulation system doesn't deploy subliminal or manipulative techniques to distort behavior (Article 5(1)(a)), doesn't exploit vulnerabilities of specific groups (Article 5(1)(b)), doesn't perform social scoring (Article 5(1)(c)), doesn't assess criminal risk (Article 5(1)(d)), doesn't scrape facial images (Article 5(1)(e)), doesn't perform workplace emotion recognition (Article 5(1)(f)), doesn't categorize based on biometric data (Article 5(1)(g)), and doesn't perform real-time remote biometric identification (Article 5(1)(h)). Therefore, it is not a prohibited system.
 
-Step 2: The system is not a "High-risk AI system under Annex I" as it is not a safety component of a product nor is it a product itself covered by Union h
+Step 2: I checked if the system is a "High-risk AI system under Annex I." The Total Store Simulation is not a safety component of a product nor is it a product itself covered by Union harmonization laws listed in Annex I. It is a retail analytics tool that simulates customer behavior to optimize store layouts, and not subject to third-party conformity assessment.
+ts, and not subject to third-party conformity assessment.
 
-Step 1: The system does not qualify as "Prohibited" under Article 5. It does not deploy subliminal or manipulative techniques to distort behavior causing harm (5(1)(a)), exploit vulnerabilities (5(1)(b)), perform social scoring (5(1)(c)), predict criminal behavior (5(1)(d)), perform facial scraping (5(1)(e)), recognize emotions in workplace/education (5(1)(f)), categorize based on biometric data (5(1)(g)), or perform real-time biometric identification (5(1)(h)).
+Step 3: I checked if the system is a "High-risk AI system under Annex III." The system doesn't fall under any of the high-risk categories in Annex III: it
 
-Step 2: The system is not a "High-risk AI system under Annex I" as it is not a safety component of a product nor is it a product itself covered by Union harmonization laws listed in Annex I. The store simulation system does not relate to machinery safety, toys, medical devices, or any other products requiring third-party conformity assessment under those laws.
-harm (5(1)(a)), exploit vulnerabilities (5(1)(b)), perform social scoring (5(1)(c)), predict criminal behavior (5(1)(d)), perform facial scraping (5(1)(e)), recognize emotions in workplace/education (5(1)(f)), categorize based on biometric data (5(1)(g)), or perform real-time biometric identification (5(1)(h)).
+Step 3: I checked if the system is a "High-risk AI system under Annex III." The system doesn't fall under any of the high-risk categories in Annex III: itStep 3: I checked if the system is a "High-risk AI system under Annex III." The system doesn't fall under any of the high-risk categories in Annex III: it is not related to biometric identification, critical infrastructure, education/training, employment/worker management, essential services access, law enforcement, migration/asylum/border control, or justice/democratic processes. It is purely a business optimization tool for retail layout design.
+orcement, migration/asylum/border control, or justice/democratic processes. It is purely a business optimization tool for retail layout design.
 
-Step 2: The system is not a "High-risk AI system under Annex I" as it is not a safety component of a product nor is it a product itself covered by Union harmonization laws listed in Annex I. The store simulation system does not relate to machinery safety, toys, medical devices, or any other products requiring third-party conformity assessment under those laws.
-h)).
+Step 4 & 6: I assessed if the system has transparency obligations. The system simulates customer behavior but doesn't interact with natural persons directly (Article 50(1)), doesn't generate synthetic content (Article 50(2)), doesn't perform emotion recognition (Article 50(3)), doesn't perform biometric catStep 4 & 6: I assessed if the system has transparency obligations. The system simulates customer behavior but doesn't interact with natural persons directly (Article 50(1)), doesn't generate synthetic content (Article 50(2)), doesn't perform emotion recognition (Article 50(3)), doesn't perform biometric categorization (Article 50(3)), and doesn't create deep fakes (Article 50(4)). Therefore, no transparency obligations apply.
+ly (Article 50(1)), doesn't generate synthetic content (Article 50(2)), doesn't perform emotion recognition (Article 50(3)), doesn't perform biometric categorization (Article 50(3)), and doesn't create deep fakes (Article 50(4)). Therefore, no transparency obligations apply.
+egorization (Article 50(3)), and doesn't create deep fakes (Article 50(4)). Therefore, no transparency obligations apply.
 
-Step 2: The system is not a "High-risk AI system under Annex I" as it is not a safety component of a product nor is it a product itself covered by Union harmonization laws listed in Annex I. The store simulation system does not relate to machinery safety, toys, medical devices, or any other products requiring third-party conformity assessment under those laws.
 
-
-Step 2: The system is not a "High-risk AI system under Annex I" as it is not a safety component of a product nor is it a product itself covered by Union harmonization laws listed in Annex I. The store simulation system does not relate to machinery safety, toys, medical devices, or any other products requiring third-party conformity assessment under those laws.
-
-Step 3: The system does not qualify as "High-risk AI system under Annex III" as it does not fall under any of the defined high-risk areas. It is not used armonization laws listed in Annex I. The store simulation system does not relate to machinery safety, toys, medical devices, or any other products requiring third-party conformity assessment under those laws.
-
-Step 3: The system does not qualify as "High-risk AI system under Annex III" as it does not fall under any of the defined high-risk areas. It is not used 
-
-Step 3: The system does not qualify as "High-risk AI system under Annex III" as it does not fall under any of the defined high-risk areas. It is not used for biometric identification, critical infrastructure management, education/training evaluation, employment decisions, essential services access, law enforcement, migration/border control, or judicial decisions. The store simulation is solely used for business optimization in retail environments.
-Step 3: The system does not qualify as "High-risk AI system under Annex III" as it does not fall under any of the defined high-risk areas. It is not used for biometric identification, critical infrastructure management, education/training evaluation, employment decisions, essential services access, law enforcement, migration/border control, or judicial decisions. The store simulation is solely used for business optimization in retail environments.
-for biometric identification, critical infrastructure management, education/training evaluation, employment decisions, essential services access, law enforcement, migration/border control, or judicial decisions. The store simulation is solely used for business optimization in retail environments.
-
-Step 4-6: The system does not meet the criteria for transparency obligations as it:
-- Does not interact with natural persons in a way they might believe they're interacting with a human
-- Does not generate synthetic audio, image, video, or text content
-rcement, migration/border control, or judicial decisions. The store simulation is solely used for business optimization in retail environments.
-
-Step 4-6: The system does not meet the criteria for transparency obligations as it:
-- Does not interact with natural persons in a way they might believe they're interacting with a human
-- Does not generate synthetic audio, image, video, or text content
-- Does not perform emotion recognition
-- Does not perform biometric categorization
-
-Step 4-6: The system does not meet the criteria for transparency obligations as it:
-- Does not interact with natural persons in a way they might believe they're interacting with a human
-- Does not generate synthetic audio, image, video, or text content
-- Does not perform emotion recognition
-- Does not perform biometric categorization
-- Does not interact with natural persons in a way they might believe they're interacting with a human
-- Does not generate synthetic audio, image, video, or text content
-- Does not perform emotion recognition
-- Does not perform biometric categorization
-- Does not perform emotion recognition
-- Does not perform biometric categorization
-- Does not create deep fakes or manipulated content
-- Does not create deep fakes or manipulated content
-
-Step 7: Since the AI system does not meet any criteria for prohibited, high-risk, or transparency obligations classifications, it is classified as a "Low-risk AI system." The system is used for business analysis and optimization, simulating customer behavior to improve store layouts, which does not pose significant risks to fundamental rights or safety.
+Step 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency oStep 7: Since the system doesn't meet the criteria for a prohibited AI system, a high-risk AI system under Annex I or III, and doesn't have transparency obligations, it is classified as a "Low-risk AI system."
+bligations, it is classified as a "Low-risk AI system."
 
 Requires Additional Information: No
 """

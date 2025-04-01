@@ -230,7 +230,23 @@ def prompt_approach(classification_model_name, web_search_model, sheet, output_s
         web_scraper_obj.reset_redirect_url()
 
 
+
+
+from openpyxl import Workbook
+
+
 def multiple_model_approach(chatgpt_model, claude_model):
+    # Create a workbook and select the active worksheet
+    wb = Workbook()
+    ws = wb.active
+    workbook_filename = "All_Models_Results.xlsx"
+
+    # Add a header row
+    ws.append(["Generated Text"])
+    wb.save(workbook_filename)
+
+    row_num = 2
+
     # Allowed categories
     allowed_categories = {
         'Prohibited AI system',
@@ -254,6 +270,7 @@ def multiple_model_approach(chatgpt_model, claude_model):
             startup_name = company['company_name']
             print(f"{index}: {startup_name}")
 
+            longest_reasoned_use_case_string = ""
             for use_case in company['use_cases']:
                 # print(use_case)
                 use_case_string = f"AI Use Case: {use_case["use_case_name"]}\nUse Case Description: {use_case["use_case_description"]}"
@@ -263,29 +280,29 @@ def multiple_model_approach(chatgpt_model, claude_model):
                 # print(f"Master Prompt: {master_full_prompt}")
 
 
-                # # Pass to chatgpt-latest
-                # chat_use_case_obj = ChatGPT(chatgpt_model, master_full_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
-                # chatgpt_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
-                # # Update token cost
-                # web_scraper_obj.set_token_cost(input_tokens, output_tokens, chatgpt_model)
+                # Pass to chatgpt-latest
+                chat_use_case_obj = ChatGPT(chatgpt_model, master_full_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
+                chatgpt_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
+                # Update token cost
+                web_scraper_obj.set_token_cost(input_tokens, output_tokens, chatgpt_model)
 
+                chatgpt_use_case_response += "\n\n########END OF USE CASE########\n\n"
                 # print(f"\n\nFrom ChatGPT:\n{chatgpt_use_case_response}")
-                
-
-                test_strings.test_string_1 += "\n\n########END OF USE CASE########\n\n"
+                # test_strings.test_string_1 += "\n\n########END OF USE CASE########\n\n"
 
 
-                # # Pass to Claude model
-                # claude_use_case_response, input_tokens, output_tokens = claude_api(claude_model, master_full_prompt)
-                # # Update token cost
-                # web_scraper_obj.set_token_cost(input_tokens, output_tokens, claude_model)
+                # Pass to Claude model
+                claude_use_case_response, input_tokens, output_tokens = claude_api(claude_model, master_full_prompt)
+                # Update token cost
+                web_scraper_obj.set_token_cost(input_tokens, output_tokens, claude_model)
 
+                claude_use_case_response += "\n\n########END OF USE CASE########\n\n"
                 # print(f"\n\n\nFrom Claude:\n\n{claude_use_case_response}")
+                # test_strings.test_string_2 += "\n\n########END OF USE CASE########\n\n"
 
 
-                test_strings.test_string_2 += "\n\n########END OF USE CASE########\n\n"
-
-                final_string = f"{test_strings.test_string_1}{test_strings.test_string_2}"
+                # final_string = f"{test_strings.test_string_1}{test_strings.test_string_2}"
+                final_string = f"{chatgpt_use_case_response}{claude_use_case_response}"
 
 
                 # Get the combined json from all models
@@ -298,39 +315,60 @@ def multiple_model_approach(chatgpt_model, claude_model):
 
                 # Create a dictionary to store the votes
                 votings = {}
+                # Iterate through the result JSON and count votes for each classification
                 for model_use_case in result_json:
-                    risk_classification = model_use_case["Risk Classification"]
-                    if risk_classification not in allowed_categories:
-                        risk_classification = "Parse Error - Classification not in allowed_categories"
-                    
-                    if risk_classification in votings:
-                        votings[risk_classification] += 1
+                    classification = model_use_case["Risk Classification"]
+                    if classification in allowed_categories:
+                        if classification not in votings:
+                            votings[classification] = 0
+                        votings[classification] += 1
                     else:
-                        votings[risk_classification] = 1
+                        # If the classification is not in the allowed categories, re-classify it as "Uncertain"
+                        model_use_case["Risk Classification"] = "Uncertain"
+                        if "Uncertain" not in votings:
+                            votings["Uncertain"] = 0
+                        votings["Uncertain"] += 1
+
 
                     
                 # Find the classification with the most votes.
-                max_votes = 0
-                final_classification = ""
-                for classification, votes in votings.items():
-                    if votes > max_votes:
-                        max_votes = votes
-                        final_classification = classification
+                max_votes = max(votings.values())
+                classifications_with_max_votes = [classification for classification, votes in votings.items() if votes == max_votes]
+                # If there are multiple classifications with the same max votes, choose the least risky one
+                if len(classifications_with_max_votes) > 1:
+                    classifications_with_max_votes.sort(key=lambda x: list(allowed_categories).index(x) if x in allowed_categories else len(allowed_categories))
+                final_classification = classifications_with_max_votes[0]
 
+                # print(f"Votings: {votings}")
+                # print(f"Max Votes: {max_votes}")
+                # print(f"Classifications with max votes: {classifications_with_max_votes}")
                 # print(f"Final Classification: {final_classification}")
 
-                # Get the use case with the final classification
+
+
+                # Get the use cases with the final classification
                 filtered_use_cases = [model_use_case for model_use_case in result_json if model_use_case["Risk Classification"] == final_classification]
+                # print(f"Filtered Use Cases: {filtered_use_cases}\n\n\n")
                 # Get the use case with the longest reason
                 longest_reasoned_use_case = max(filtered_use_cases, key=lambda x: len(x["Reason"]))
+                
+                # print(f"Longest Reasoned Use Case: {longest_reasoned_use_case}")
+                
+                
+                longest_reasoned_use_case_string += "\n".join(f"{k}: {v}" for k, v in longest_reasoned_use_case.items())
+                longest_reasoned_use_case_string += "\n\n########END OF CLASSIFICATION########\n\n\n\n"
 
-                print(longest_reasoned_use_case)
+                # print(f"{longest_reasoned_use_case_string}")
 
+
+            # Write the final use case string to Excel
+            ws.cell(row=row_num, column=1, value=longest_reasoned_use_case_string)
+            wb.save(workbook_filename)
+            row_num += 1
+
+            if index == 1:
                 break
-
-
-            
-            break
+            # break
 
 
 import test_strings
