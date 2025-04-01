@@ -37,6 +37,16 @@ class WebScraper(LinkWorker):
             input_cost = (input_tokens / 1000) * 0.00055
             output_cost = (output_tokens / 1000) * 0.00219
             self.__total_token_cost += input_cost + output_cost
+        elif model_name == "gemini-1.5-pro":
+            # for input and output tokens <= 128k tokens
+            input_cost = (input_tokens / 1000) * 0.00125
+            output_cost = (output_tokens / 1000) * 0.005
+            self.__total_token_cost += input_cost + output_cost
+        elif model_name == "gemini-2.0-flash-thinking-exp-01-21":
+            # This cost is taken from the Gemini 2.0 Flash model
+            input_cost = (input_tokens / 1000) * 0.0001
+            output_cost = (output_tokens / 1000) * 0.0004
+            self.__total_token_cost += input_cost + output_cost
         else:
             raise ValueError("Model name not recognized. Token cost not calculated.")
 
