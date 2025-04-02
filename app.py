@@ -25,6 +25,9 @@ load_dotenv()
 # Constants
 TOTAL_PAGE_CRAWLS = 4
 
+
+
+
 def claude_api(model, prompt):
     try:
         client = anthropic.Anthropic(
@@ -240,10 +243,10 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
     # Create a workbook and select the active worksheet
     wb = Workbook()
     ws = wb.active
-    workbook_filename = "All_Models_Results.xlsx"
+    workbook_filename = "Subset_Models_Results.xlsx"
 
     # Add a header row
-    ws.append(["Generated Text", "Token Cost ($)"])
+    ws.append(["Startup Name", "Generated Text", "Token Cost ($)"])
     wb.save(workbook_filename)
 
     row_num = 2
@@ -264,14 +267,14 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
     prompts_obj = Prompts(TOTAL_PAGE_CRAWLS)
 
 
-    with open('datasets/Use Cases/3_use_cases.json', 'r') as file:
+    with open('subset_use_cases.json', 'r') as file:
         json_data = json.load(file)
 
-        for index, company in enumerate(json_data['companies']):
-            if index == 0:
-                continue
+        for main_companies_index, company in enumerate(json_data['companies']):
+            # if main_companies_index < 26:
+            #     continue
             startup_name = company['company_name']
-            print(f"{index}: {startup_name}")
+            print(f"{main_companies_index}: {startup_name}")
 
             longest_reasoned_use_case_string = ""
             for use_case in company['use_cases']:
@@ -282,6 +285,8 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                 master_full_prompt = prompts_obj.prepare_AI_Act_prompt(master_prompt, use_case_string)
                 # print(f"Master Prompt: {master_full_prompt}")
 
+
+                # Should also handle exception, ValueError: not enough values to unpack (expected 3, got 2)
 
                 # Pass to chatgpt-latest
                 chat_use_case_obj = ChatGPT(chatgpt_model, master_full_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
@@ -344,6 +349,7 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
 
                 # final_string = f"{test_strings.test_string_1}{test_strings.test_string_2}{test_strings.test_string_3}{test_strings.test_string_4}{test_strings.test_string_5}"
                 final_string = f"{chatgpt_use_case_response}{claude_use_case_response}{deepseek_use_case_response}{gemeni_response}{mistral_response}"
+                # final_string = f"{mistral_response}"
 
 
                 # Get the combined json from all models
@@ -388,12 +394,12 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                     )
                 final_classification = classifications_with_max_votes[0]
 
-                # print(f"Votings: {votings}")
-                # print(f"Max Votes: {max_votes}")
-                # print(f"Classifications with max votes: {classifications_with_max_votes}")
+                print(f"Votings: {votings}")
+                print(f"Max Votes: {max_votes}")
+                print(f"Classifications with max votes: {classifications_with_max_votes}")
                 
-                # print(classifications_list)
-                # print(f"Final Classification: {final_classification}")
+                print(f"Classifications List: {classifications_list}")
+                print(f"Final Classification: {final_classification}")
 
 
                 # ***STORE THE VOTE DISTRIBUTION FROM EACH MODEL***
@@ -413,9 +419,9 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
 
                 # Attach the distribution to the longest reasoned use case
                 longest_reasoned_use_case["Model Distribution"] = "\n"
-                for index, (k,v) in enumerate(model_distribution.items()):
+                for model_distrib_index, (k,v) in enumerate(model_distribution.items()):
                     longest_reasoned_use_case["Model Distribution"] += f"{k} => {v}"
-                    longest_reasoned_use_case["Model Distribution"] += "\n" if index < len(model_distribution) - 1 else ""
+                    longest_reasoned_use_case["Model Distribution"] += "\n" if model_distrib_index < len(model_distribution) - 1 else ""
                 # Attach which model it was classified from
                 longest_reasoned_use_case["Chosen Model"] = voters[longest_reasoned_use_case_index]
 
@@ -427,20 +433,24 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                 longest_reasoned_use_case_string += "\n\n########END OF CLASSIFICATION########\n\n\n\n"
 
                 # print(f"Model Distribution:\n{model_distribution_string}")
-                # print(f"{longest_reasoned_use_case_string}")
+                print(f"{longest_reasoned_use_case_string}")
 
                 # break
 
 
             # Write the final use case string to Excel
-            ws.cell(row=row_num, column=1, value=longest_reasoned_use_case_string)
-            ws.cell(row=row_num, column=2, value=web_scraper_obj.get_token_cost())
+            ws.cell(row=row_num, column=1, value=startup_name)
+            ws.cell(row=row_num, column=2, value=longest_reasoned_use_case_string)
+            ws.cell(row=row_num, column=3, value=web_scraper_obj.get_token_cost())
             wb.save(workbook_filename)
             row_num += 1
 
-            # if index == 1:
-            #     break
-            break
+            # reset token cost, redirected URL
+            web_scraper_obj.reset_token_cost()
+            web_scraper_obj.reset_redirect_url()
+
+
+            # break
 
 
 import test_strings
@@ -460,5 +470,4 @@ if __name__ == "__main__":
     multiple_model_approach(chatgpt_model="chatgpt-4o-latest", claude_model="claude-3-7-sonnet-20250219", deepseek_model="deepseek-reasoner", gemini_model="gemini-2.0-flash-thinking-exp-01-21", mistral_model="mistral-large-latest")
     
 
-    pass
 
