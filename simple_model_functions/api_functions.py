@@ -61,4 +61,3 @@ def mistral_api(model, prompt):
 
     return reponse_message, input_tokens, output_tokens
 
-
