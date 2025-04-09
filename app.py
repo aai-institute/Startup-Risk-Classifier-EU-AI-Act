@@ -238,19 +238,27 @@ def prompt_approach(classification_model_name, web_search_model, sheet, output_s
 
 
 from openpyxl import Workbook
+import csv
 
 
 def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_model, mistral_model):
     # Create a workbook and select the active worksheet
     wb = Workbook()
     ws = wb.active
-    workbook_filename = "Subset_Models_Results.xlsx"
-
+    workbook_filename = "Left out.xlsx"
     # Add a header row
     ws.append(["Startup Name", "Generated Text", "Token Cost ($)"])
     wb.save(workbook_filename)
-
+    # Excel start row number
     row_num = 2
+
+
+    # CSV
+    csv_filename = "Left_out.csv"
+    with open(csv_filename, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Startup Name", "Generated Text", "Token Cost ($)"])
+
 
     # Allowed categories
     allowed_categories = [
@@ -270,220 +278,224 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
     MAX_API_TRIES = 4
     retry_delay = 10
 
-    with open('subset_use_cases.json', 'r') as file:
+    start_index = 38
+    end_index = 160
+
+    target_indexes = [160, 321, 482, 642]
+
+    with open('datasets/Use Cases/3_use_cases.json', 'r') as file:
         json_data = json.load(file)
 
-        for main_companies_index, company in enumerate(json_data['companies']):
-            if main_companies_index < 26 or main_companies_index > 26:
-                continue
-            startup_name = company['company_name']
-            print(f"{main_companies_index}: {startup_name}")
+        companies = json_data['companies']
+        for idx in target_indexes:
+            if idx < len(companies):  # Prevent IndexError
+                company = companies[idx]
+                startup_name = company['company_name']
+                print(f"JSON Index: {idx}\nStartup Name: {startup_name}")
 
-            longest_reasoned_use_case_string = ""
-            for use_case in company['use_cases']:
-                # print(use_case)
-                use_case_string = f"AI Use Case: {use_case["use_case_name"]}\nUse Case Description: {use_case["use_case_description"]}"
-                # print(use_case_string)
+                longest_reasoned_use_case_string = ""
+                for use_case in company['use_cases']:
+                    # print(use_case)
+                    use_case_string = f"AI Use Case: {use_case["use_case_name"]}\nUse Case Description: {use_case["use_case_description"]}"
+                    # print(use_case_string)
 
-                master_full_prompt = prompts_obj.prepare_AI_Act_prompt(master_prompt, use_case_string)
-                # print(f"Master Prompt: {master_full_prompt}")
-
-
-                for attempt in range(MAX_API_TRIES):
-                    try:
-                        # Chatgpt-latest
-                        chat_use_case_obj = ChatGPT(chatgpt_model, master_full_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
-                        chatgpt_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
-                        # Update token cost
-                        web_scraper_obj.set_token_cost(input_tokens, output_tokens, chatgpt_model)
-
-                        chatgpt_use_case_response += "\n\n########END OF USE CASE########\n\n"
-                        # print(f"\n\nFrom ChatGPT:\n{chatgpt_use_case_response}")
-                        break
-                    except Exception as e:
-                        print(f"Error in ChatGPT API call. Attempt {attempt + 1}: {e}")
-                        if attempt < MAX_API_TRIES - 1:
-                            time.sleep(retry_delay)
-                        else:
-                            web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=chatgpt_model)
-                            raise RuntimeError("ChatGPT Classification failed") from e
+                    master_full_prompt = prompts_obj.prepare_AI_Act_prompt(master_prompt, use_case_string)
+                    # print(f"Master Prompt: {master_full_prompt}")
 
 
-                for attempt in range(MAX_API_TRIES):
-                    try:
-                        # Pass to Claude model
-                        claude_use_case_response, input_tokens, output_tokens = claude_api(claude_model, master_full_prompt)
-                        # Update token cost
-                        web_scraper_obj.set_token_cost(input_tokens, output_tokens, claude_model)
+                    for attempt in range(MAX_API_TRIES):
+                        try:
+                            # Chatgpt-latest
+                            chat_use_case_obj = ChatGPT(chatgpt_model, master_full_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
+                            chatgpt_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
+                            # Update token cost
+                            web_scraper_obj.set_token_cost(input_tokens, output_tokens, chatgpt_model)
 
-                        claude_use_case_response += "\n\n########END OF USE CASE########\n\n"                
-                        # print(f"\n\n\nFrom Claude:\n\n{claude_use_case_response}")
-                        break
-                    except Exception as e:
-                        print(f"Error in Claude API call. Attempt {attempt + 1}: {e}")
-                        if attempt < MAX_API_TRIES - 1:
-                            time.sleep(retry_delay)
-                        else:
-                            web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=claude_model)
-                            raise RuntimeError("Claude Classification failed") from e
-
-
-                for attempt in range(MAX_API_TRIES):
-                    try:
-                        # Pass to Deepseek-reasoner
-                        deepseek_use_case_obj = ChatGPT(deepseek_model, master_full_prompt, [], OpenAI(api_key=os.getenv("DEEPSEEK_KEY"), max_retries=5, base_url="https://api.deepseek.com"))
-                        deepseek_use_case_response, input_tokens, output_tokens = deepseek_use_case_obj.chat_model()
-                        # Update token cost
-                        web_scraper_obj.set_token_cost(input_tokens, output_tokens, deepseek_model)
-
-                        deepseek_use_case_response += "\n\n########END OF USE CASE########\n\n"
-                        # print(f"\n\n\nFrom Deepseek:\n\n{deepseek_use_case_response}")
-                        break
-                    except Exception as e:
-                        print(f"Error in Deepseek-reasoner API call. Attempt {attempt + 1}: {e}")
-                        if attempt < MAX_API_TRIES - 1:
-                            time.sleep(retry_delay)
-                        else:
-                            web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=deepseek_model)
-                            raise RuntimeError("Deepseek-reasoner Classification failed") from e
+                            chatgpt_use_case_response += "\n\n########END OF USE CASE########\n\n"
+                            # print(f"\n\nFrom ChatGPT:\n{chatgpt_use_case_response}")
+                            break
+                        except Exception as e:
+                            print(f"Error in ChatGPT API call. Attempt {attempt + 1}: {e}")
+                            if attempt < MAX_API_TRIES - 1:
+                                time.sleep(retry_delay)
+                            else:
+                                web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=chatgpt_model)
+                                raise RuntimeError("ChatGPT Classification failed") from e
 
 
-                for attempt in range(MAX_API_TRIES):
-                    try:
-                        # Pass to gemini-2.0-flash-thinking
-                        gemeni_response, input_tokens, output_tokens = gemini_api(gemini_model, master_full_prompt)
-                        # Update token cost
-                        web_scraper_obj.set_token_cost(input_tokens, output_tokens, gemini_model)
+                    for attempt in range(MAX_API_TRIES):
+                        try:
+                            # Pass to Claude model
+                            claude_use_case_response, input_tokens, output_tokens = claude_api(claude_model, master_full_prompt)
+                            # Update token cost
+                            web_scraper_obj.set_token_cost(input_tokens, output_tokens, claude_model)
 
-                        gemeni_response += "\n\n########END OF USE CASE########\n\n"
-                        # print(f"\n\n\nFrom Gemini:\n\n{gemeni_response}")
-                        break
-                    except Exception as e:
-                        print(f"Error in Gemini API call. Attempt {attempt + 1}: {e}")
-                        if attempt < MAX_API_TRIES - 1:
-                            time.sleep(retry_delay)
-                        else:
-                            web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=gemini_model)
-                            raise RuntimeError("Gemini Classification failed") from e
-
-
-                for attempt in range(MAX_API_TRIES):
-                    try:
-                        # Pass to mistral model
-                        mistral_response, input_tokens, output_tokens = mistral_api(mistral_model, master_full_prompt)
-                        # Update token cost
-                        web_scraper_obj.set_token_cost(input_tokens, output_tokens, mistral_model)
-
-                        mistral_response += "\n\n########END OF USE CASE########\n\n"
-                        # print(f"\n\n\nFrom Mistral:\n\n{mistral_response}")
-                        break
-                    except Exception as e:
-                        print(f"Error in Mistral API call. Attempt {attempt + 1}: {e}")
-                        if attempt < MAX_API_TRIES - 1:
-                            time.sleep(retry_delay)
-                        else:
-                            web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=mistral_model)
-                            raise RuntimeError("Mistral Classification failed") from e
+                            claude_use_case_response += "\n\n########END OF USE CASE########\n\n"                
+                            # print(f"\n\n\nFrom Claude:\n\n{claude_use_case_response}")
+                            break
+                        except Exception as e:
+                            print(f"Error in Claude API call. Attempt {attempt + 1}: {e}")
+                            if attempt < MAX_API_TRIES - 1:
+                                time.sleep(retry_delay)
+                            else:
+                                web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=claude_model)
+                                raise RuntimeError("Claude Classification failed") from e
 
 
+                    for attempt in range(MAX_API_TRIES):
+                        try:
+                            # Pass to Deepseek-reasoner
+                            deepseek_use_case_obj = ChatGPT(deepseek_model, master_full_prompt, [], OpenAI(api_key=os.getenv("DEEPSEEK_KEY"), max_retries=5, base_url="https://api.deepseek.com"))
+                            deepseek_use_case_response, input_tokens, output_tokens = deepseek_use_case_obj.chat_model()
+                            # Update token cost
+                            web_scraper_obj.set_token_cost(input_tokens, output_tokens, deepseek_model)
+
+                            deepseek_use_case_response += "\n\n########END OF USE CASE########\n\n"
+                            # print(f"\n\n\nFrom Deepseek:\n\n{deepseek_use_case_response}")
+                            break
+                        except Exception as e:
+                            print(f"Error in Deepseek-reasoner API call. Attempt {attempt + 1}: {e}")
+                            if attempt < MAX_API_TRIES - 1:
+                                time.sleep(retry_delay)
+                            else:
+                                web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=deepseek_model)
+                                raise RuntimeError("Deepseek-reasoner Classification failed") from e
 
 
-                # test_strings.test_string_1 += "\n\n########END OF USE CASE########\n\n"
-                # test_strings.test_string_2 += "\n\n########END OF USE CASE########\n\n"
-                # test_strings.test_string_3 += "\n\n########END OF USE CASE########\n\n"
-                # test_strings.test_string_4 += "\n\n########END OF USE CASE########\n\n"
-                # test_strings.test_string_5 += "\n\n########END OF USE CASE########\n\n"
+                    for attempt in range(MAX_API_TRIES):
+                        try:
+                            # Pass to gemini-2.0-flash-thinking
+                            gemini_response, input_tokens, output_tokens = gemini_api(gemini_model, master_full_prompt)
+                            # Update token cost
+                            web_scraper_obj.set_token_cost(input_tokens, output_tokens, gemini_model)
+
+                            gemini_response += "\n\n########END OF USE CASE########\n\n"
+                            # print(f"\n\n\nFrom Gemini:\n\n{gemini_response}")
+                            break
+                        except Exception as e:
+                            print(f"Error in Gemini API call. Attempt {attempt + 1}: {e}")
+                            if attempt < MAX_API_TRIES - 1:
+                                time.sleep(retry_delay)
+                            else:
+                                web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=gemini_model)
+                                raise RuntimeError("Gemini Classification failed") from e
 
 
-                # final_string = f"{test_strings.test_string_1}{test_strings.test_string_2}{test_strings.test_string_3}{test_strings.test_string_4}{test_strings.test_string_5}"
-                final_string = f"{chatgpt_use_case_response}{claude_use_case_response}{deepseek_use_case_response}{gemeni_response}{mistral_response}"
-                # final_string = f"{mistral_response}"
+                    for attempt in range(MAX_API_TRIES):
+                        try:
+                            # Pass to mistral model
+                            mistral_response, input_tokens, output_tokens = mistral_api(mistral_model, master_full_prompt)
+                            # Update token cost
+                            web_scraper_obj.set_token_cost(input_tokens, output_tokens, mistral_model)
+
+                            mistral_response += "\n\n########END OF USE CASE########\n\n"
+                            # print(f"\n\n\nFrom Mistral:\n\n{mistral_response}")
+                            break
+                        except Exception as e:
+                            print(f"Error in Mistral API call. Attempt {attempt + 1}: {e}")
+                            if attempt < MAX_API_TRIES - 1:
+                                time.sleep(retry_delay)
+                            else:
+                                web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=mistral_model)
+                                raise RuntimeError("Mistral Classification failed") from e
 
 
-                # Get the combined json from all models
-                result_json = extract_use_cases(use_case, final_string)
-                # print(f"Result JSON: {result_json}")
-
-                with open('test.json', 'w') as json_file:
-                    json.dump(result_json, json_file, indent=4)
-                
-
-                # Create a dictionary to store the votes and store individual classifications from all models
-                # claude-3-7-sonnet
-                voters = ["ChatGPT 4o", "Claude 3.7 Sonnet", "DeepSeek Reasoner", "Gemini 2.0 Flash Thinker", "Mistral Large"]
-                votings = {}
-                classifications_list = []
-                # Iterate through the result JSON and count votes for each classification
-                for model_use_case in result_json:
-                    classification = model_use_case["Risk Classification"]
-                    if classification in allowed_categories:
-                        if classification not in votings:
-                            votings[classification] = 0
-                        votings[classification] += 1
-                        classifications_list.append(classification)
-                    else:
-                        # If the classification is not in the allowed categories, re-classify it as "Uncertain"
-                        model_use_case["Risk Classification"] = "Uncertain"
-                        classifications_list.append("Uncertain")
-                        if "Uncertain" not in votings:
-                            votings["Uncertain"] = 0
-                        votings["Uncertain"] += 1
+                    # test_strings.test_string_1 += "\n\n########END OF USE CASE########\n\n"
+                    # test_strings.test_string_2 += "\n\n########END OF USE CASE########\n\n"
+                    # test_strings.test_string_3 += "\n\n########END OF USE CASE########\n\n"
+                    # test_strings.test_string_4 += "\n\n########END OF USE CASE########\n\n"
+                    # test_strings.test_string_5 += "\n\n########END OF USE CASE########\n\n"
 
 
+                    # final_string = f"{test_strings.test_string_1}{test_strings.test_string_2}{test_strings.test_string_3}{test_strings.test_string_4}{test_strings.test_string_5}"
+                    final_string = f"{chatgpt_use_case_response}{claude_use_case_response}{deepseek_use_case_response}{gemini_response}{mistral_response}"
+                    # final_string = f"{mistral_response}"
+
+
+                    # Get the combined json from all models
+                    result_json = extract_use_cases(use_case, final_string)
+                    # print(f"Result JSON: {result_json}")
+
+                    with open('test.json', 'w') as json_file:
+                        json.dump(result_json, json_file, indent=4)
                     
-                # Find the classification with the most votes.
-                max_votes = max(votings.values())
-                classifications_with_max_votes = [classification for classification, votes in votings.items() if votes == max_votes]
-                # 3. If tie, pick least risky from the tie group
-                if len(classifications_with_max_votes) > 1:
-                    classifications_with_max_votes.sort(
-                        key=lambda x: allowed_categories.index(x) if x in allowed_categories else -1,
-                        reverse=True
-                    )
-                final_classification = classifications_with_max_votes[0]
 
-                print(f"Votings: {votings}")
-                print(f"Max Votes: {max_votes}")
-                print(f"Classifications with max votes: {classifications_with_max_votes}")
-                
-                print(f"Classifications List: {classifications_list}")
-                print(f"Final Classification: {final_classification}")
-
-
-                # ***STORE THE VOTE DISTRIBUTION FROM EACH MODEL***
-                model_distribution = dict(zip(voters, classifications_list))
-                model_distribution_string = ""
-                for model, classification in model_distribution.items():
-                    # print(f"{model}: {classification}")
-                    model_distribution_string += f"{model}: {classification}\n"
+                    # Create a dictionary to store the votes and store individual classifications from all models
+                    # claude-3-7-sonnet
+                    voters = ["ChatGPT 4o", "Claude 3.7 Sonnet", "DeepSeek Reasoner", "Gemini 2.0 Flash Thinker", "Mistral Large"]
+                    votings = {}
+                    classifications_list = []
+                    # Iterate through the result JSON and count votes for each classification
+                    for model_use_case in result_json:
+                        classification = model_use_case["Risk Classification"]
+                        if classification in allowed_categories:
+                            if classification not in votings:
+                                votings[classification] = 0
+                            votings[classification] += 1
+                            classifications_list.append(classification)
+                        else:
+                            # If the classification is not in the allowed categories, re-classify it as "Uncertain"
+                            model_use_case["Risk Classification"] = "Uncertain"
+                            classifications_list.append("Uncertain")
+                            if "Uncertain" not in votings:
+                                votings["Uncertain"] = 0
+                            votings["Uncertain"] += 1
 
 
-                # Get the use cases with the final classification
-                filtered_use_cases = [model_use_case for model_use_case in result_json if model_use_case["Risk Classification"] == final_classification]
-                # Get the use case with the longest reason
-                longest_reasoned_use_case = max(filtered_use_cases, key=lambda x: len(x["Reason"]))
-                longest_reasoned_use_case_index = result_json.index(longest_reasoned_use_case)
+                        
+                    # Find the classification with the most votes.
+                    max_votes = max(votings.values())
+                    classifications_with_max_votes = [classification for classification, votes in votings.items() if votes == max_votes]
+                    # 3. If tie, pick least risky from the tie group
+                    if len(classifications_with_max_votes) > 1:
+                        classifications_with_max_votes.sort(
+                            key=lambda x: allowed_categories.index(x) if x in allowed_categories else -1,
+                            reverse=True
+                        )
+                    final_classification = classifications_with_max_votes[0]
+
+                    print(f"Votings: {votings}")
+                    print(f"Max Votes: {max_votes}")
+                    print(f"Classifications with max votes: {classifications_with_max_votes}")
+                    
+                    print(f"Classifications List: {classifications_list}")
+                    print(f"Final Classification: {final_classification}")
 
 
-                # Attach the distribution to the longest reasoned use case
-                longest_reasoned_use_case["Model Distribution"] = "\n"
-                for model_distrib_index, (k,v) in enumerate(model_distribution.items()):
-                    longest_reasoned_use_case["Model Distribution"] += f"{k} => {v}"
-                    longest_reasoned_use_case["Model Distribution"] += "\n" if model_distrib_index < len(model_distribution) - 1 else ""
-                # Attach which model it was classified from
-                longest_reasoned_use_case["Chosen Model"] = voters[longest_reasoned_use_case_index]
+                    # ***STORE THE VOTE DISTRIBUTION FROM EACH MODEL***
+                    model_distribution = dict(zip(voters, classifications_list))
+                    model_distribution_string = ""
+                    for model, classification in model_distribution.items():
+                        # print(f"{model}: {classification}")
+                        model_distribution_string += f"{model}: {classification}\n"
 
-                # print(f"Longest Reasoned Use Case: {longest_reasoned_use_case}")
-                
-                
-                
-                longest_reasoned_use_case_string += "\n".join(f"{k}: {v}" for k, v in longest_reasoned_use_case.items())
-                longest_reasoned_use_case_string += "\n\n########END OF CLASSIFICATION########\n\n\n\n"
 
-                # print(f"Model Distribution:\n{model_distribution_string}")
-                print(f"{longest_reasoned_use_case_string}")
+                    # Get the use cases with the final classification
+                    filtered_use_cases = [model_use_case for model_use_case in result_json if model_use_case["Risk Classification"] == final_classification]
+                    # Get the use case with the longest reason
+                    longest_reasoned_use_case = max(filtered_use_cases, key=lambda x: len(x["Reason"]))
+                    longest_reasoned_use_case_index = result_json.index(longest_reasoned_use_case)
 
-                # break
+
+                    # Attach the distribution to the longest reasoned use case
+                    longest_reasoned_use_case["Model Distribution"] = "\n"
+                    for model_distrib_index, (k,v) in enumerate(model_distribution.items()):
+                        longest_reasoned_use_case["Model Distribution"] += f"{k} => {v}"
+                        longest_reasoned_use_case["Model Distribution"] += "\n" if model_distrib_index < len(model_distribution) - 1 else ""
+                    # Attach which model it was classified from
+                    longest_reasoned_use_case["Chosen Model"] = voters[longest_reasoned_use_case_index]
+
+                    # print(f"Longest Reasoned Use Case: {longest_reasoned_use_case}")
+                    
+                    
+                    
+                    longest_reasoned_use_case_string += "\n".join(f"{k}: {v}" for k, v in longest_reasoned_use_case.items())
+                    longest_reasoned_use_case_string += "\n\n########END OF CLASSIFICATION########\n\n\n\n"
+
+                    # print(f"Model Distribution:\n{model_distribution_string}")
+                    print(f"{longest_reasoned_use_case_string}")
+
+                    # break
 
 
             # Write the final use case string to Excel
@@ -491,6 +503,12 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
             ws.cell(row=row_num, column=2, value=longest_reasoned_use_case_string)
             ws.cell(row=row_num, column=3, value=web_scraper_obj.get_token_cost())
             wb.save(workbook_filename)
+            
+            # Also write the same row to CSV
+            with open(csv_filename, mode="a", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow([startup_name, longest_reasoned_use_case_string, web_scraper_obj.get_token_cost()])
+            
             row_num += 1
 
             # reset token cost, redirected URL
