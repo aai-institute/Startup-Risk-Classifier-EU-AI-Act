@@ -300,6 +300,9 @@ High-risk AI system under Annex III
 High-risk AI system with transparency obligations  
 System with transparency obligations  
 Low-risk AI system
+Uncertain
+
+<Pick Uncertain if you can not reasonably assign a classification and require additional information>
 
 Reason: <Provide a detailed justification which shows that you have followed all the steps for the classification. Cite the relevant clauses and annexes to support your justification. Show your reasoning process for each step defined above and how you arrived at the final classification.>
 

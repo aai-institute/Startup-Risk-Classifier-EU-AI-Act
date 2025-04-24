@@ -8,6 +8,7 @@ custom-env/
 *.csv
 *.pyc
 *.json
+*.vscode
 datasets/
 */__pycache__/
 Previous Results/

@@ -4,14 +4,14 @@ import re
 import ast
 import json
 import time
+import csv
 
 # Third-Party Library
-import pandas as pd
 import openpyxl
-from docx import Document
 from dotenv import load_dotenv
 from openai import OpenAI
 import anthropic
+from openpyxl import Workbook
 
 # Local Imports
 from Classes import ChatGPT, Prompts, WebScraper, TextExtractor
@@ -25,8 +25,6 @@ load_dotenv()
 
 # Constants
 TOTAL_PAGE_CRAWLS = 4
-
-
 
 
 def claude_api(model, prompt):
@@ -71,20 +69,6 @@ def content_shortener(content_shortener_model, prompts_obj, page_content):
 
     return chat_shorten_page_response, input_tokens, output_tokens
 
-def read_docx(file_path):
-    doc = Document(file_path)
-    text = "\n".join([paragraph.text for paragraph in doc.paragraphs]) 
-    return text
-
-def prepare_AI_Act_prompt(master_prompt, all_ai_use_cases):
-
-    # additional_format = f"""\nDo not give any intros or outros. Respond in plain text string only (no unusual arrays), without any formatting f.e. no bold or ## headings or numbered headings. The following are the AI Use cases of the startup you have to classify:\n\n{all_ai_use_cases}"""
-
-    # # print(file_content)  # Output all content
-    # return master_prompt + additional_format
-
-    pass
-
 def traverse_links(web_scraper_obj, links, model_name, content_shortener_model, ai_use_cases, prompts_obj):
     
     try:
@@ -116,7 +100,6 @@ def traverse_links(web_scraper_obj, links, model_name, content_shortener_model, 
 
     return ai_use_cases
 
-# Extract Python-style list from a string
 def extract_list(input_string):
     # Regular expression to match Python-style lists
     list_pattern = r"\[.*?\]"
@@ -172,73 +155,6 @@ def gpt_search(web_search_model, url, prompts_obj, web_scraper_obj):
             gpt_use_case_response = ""
 
     return gpt_use_case_response
-
-
-
-def prompt_approach(classification_model_name, web_search_model, sheet, output_sheet, output_wb, output_filename):
-    # Initialize the objects
-    web_scraper_obj = WebScraper()
-
-    # sheet.max_row + 1
-    for row in range(2, sheet.max_row + 1):
-        startup_name = sheet.cell(row=row, column=1).value
-        url = sheet.cell(row=row, column=2).value
-        redirect_url = sheet.cell(row=row, column=3).value
-        use_cases_combined = sheet.cell(row=row, column=5).value
-
-
-        if pd.isnull(url):
-            continue
-        elif pd.isnull(use_cases_combined):
-            use_cases_combined = ""
-
-        print(f"Startup Name:{startup_name}")
-
-        prompts_obj = Prompts(TOTAL_PAGE_CRAWLS)
-
-
-
-        # Fix Use cases only
-        use_case_fix_obj = ChatGPT(classification_model_name, prompts_obj.fix_raw_use_cases(use_cases_combined), [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
-        use_case_fix_response, input_tokens, output_tokens = use_case_fix_obj.chat_model()
-        # Update token cost
-        web_scraper_obj.set_token_cost(input_tokens, output_tokens, classification_model_name)
-        
-        
-        save_to_excel(output_sheet, output_wb, startup_name, url, redirect_url, use_cases_combined, use_case_fix_response, web_scraper_obj.get_token_cost(), output_filename)
-
-
-
-        # # Prompt based approach for the EU AI Act
-        # eu_ai_act_prompt = prepare_AI_Act_prompt(master_prompt, use_cases_combined)
-        # # print(f"EU AI Act Prompt: {eu_ai_act_prompt}\n\n\n")
-
-        # # eu_ai_act_obj = ChatGPT(classification_model_name, eu_ai_act_prompt, [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
-        # # eu_ai_act_response, input_tokens, output_tokens = eu_ai_act_obj.chat_model()
-        # # # Update token cost
-        # # web_scraper_obj.set_token_cost(input_tokens, output_tokens, classification_model_name)
-
-
-        # # use anthropic to clasify
-        # eu_ai_act_response, input_tokens, output_tokens = claude_api(eu_ai_act_prompt)
-        # # Update token cost
-        # web_scraper_obj.set_token_cost(input_tokens, output_tokens, "claude-3-7-sonnet-20250219")
-
-
-        # save_to_excel(output_sheet, output_wb, startup_name, url, redirect_url, use_cases_combined, eu_ai_act_response, web_scraper_obj.get_token_cost(), output_filename)
-
-
-
-        # --- Finishing calls ---
-        # Reset token cost, redirected URL
-        web_scraper_obj.reset_token_cost()
-        web_scraper_obj.reset_redirect_url()
-
-
-
-
-from openpyxl import Workbook
-import csv
 
 
 def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_model, mistral_model):
@@ -299,14 +215,11 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                     use_case_string = f"AI Use Case: {use_case["use_case_name"]}\nUse Case Description: {use_case["use_case_description"]}"
                     # print(use_case_string)
 
-                    master_full_prompt = prompts_obj.prepare_AI_Act_prompt(master_prompt, use_case_string)
-                    # print(f"Master Prompt: {master_full_prompt}")
-
 
                     for attempt in range(MAX_API_TRIES):
                         try:
                             # Chatgpt-latest
-                            chat_use_case_obj = ChatGPT(chatgpt_model, master_full_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
+                            chat_use_case_obj = ChatGPT(chatgpt_model, master_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
                             chatgpt_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
                             # Update token cost
                             web_scraper_obj.set_token_cost(input_tokens, output_tokens, chatgpt_model)
@@ -326,7 +239,7 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                     for attempt in range(MAX_API_TRIES):
                         try:
                             # Pass to Claude model
-                            claude_use_case_response, input_tokens, output_tokens = claude_api(claude_model, master_full_prompt)
+                            claude_use_case_response, input_tokens, output_tokens = claude_api(claude_model, master_prompt)
                             # Update token cost
                             web_scraper_obj.set_token_cost(input_tokens, output_tokens, claude_model)
 
@@ -345,7 +258,7 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                     for attempt in range(MAX_API_TRIES):
                         try:
                             # Pass to Deepseek-reasoner
-                            deepseek_use_case_obj = ChatGPT(deepseek_model, master_full_prompt, [], OpenAI(api_key=os.getenv("DEEPSEEK_KEY"), max_retries=5, base_url="https://api.deepseek.com"))
+                            deepseek_use_case_obj = ChatGPT(deepseek_model, master_prompt, [], OpenAI(api_key=os.getenv("DEEPSEEK_KEY"), max_retries=5, base_url="https://api.deepseek.com"))
                             deepseek_use_case_response, input_tokens, output_tokens = deepseek_use_case_obj.chat_model()
                             # Update token cost
                             web_scraper_obj.set_token_cost(input_tokens, output_tokens, deepseek_model)
@@ -365,7 +278,7 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                     for attempt in range(MAX_API_TRIES):
                         try:
                             # Pass to gemini-2.0-flash-thinking
-                            gemini_response, input_tokens, output_tokens = gemini_api(gemini_model, master_full_prompt)
+                            gemini_response, input_tokens, output_tokens = gemini_api(gemini_model, master_prompt)
                             # Update token cost
                             web_scraper_obj.set_token_cost(input_tokens, output_tokens, gemini_model)
 
@@ -384,7 +297,7 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                     for attempt in range(MAX_API_TRIES):
                         try:
                             # Pass to mistral model
-                            mistral_response, input_tokens, output_tokens = mistral_api(mistral_model, master_full_prompt)
+                            mistral_response, input_tokens, output_tokens = mistral_api(mistral_model, master_prompt)
                             # Update token cost
                             web_scraper_obj.set_token_cost(input_tokens, output_tokens, mistral_model)
 
@@ -519,20 +432,7 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
             # break
 
 
-import test_strings
-
 if __name__ == "__main__":
-    # web_search_model="gpt-4o-search-preview"
-
-    # startups_file = "datasets/Use Cases/3. All GPT Formatted Final Use Cases.xlsx"
-    # sheet = load_startups_excel(startups_file)
-
-    # output_sheet, output_wb = create_results_file()
-
-    # output_filename = "Formatted Use Cases.xlsx"
-
-    # prompt_approach(classification_model_name='chatgpt-4o-latest', web_search_model="", sheet=sheet, output_sheet=output_sheet, output_wb=output_wb, output_filename=output_filename)
-    
     multiple_model_approach(chatgpt_model="chatgpt-4o-latest", claude_model="claude-3-7-sonnet-20250219", deepseek_model="deepseek-reasoner", gemini_model="gemini-2.0-flash-thinking-exp-01-21", mistral_model="mistral-large-latest")
     
 
