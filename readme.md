@@ -1,3 +1,5 @@
-Startup-Risk-Classifier-EU-AI-Act
+# Risk Classification of AI startups according to the EU AI Act
 
-An AI agent that scrapes a selection of pages of a website of a startup to find all possible use cases and the risk classification according to EU AI Act
+The app uses the GPT Web Search api to collect AI use cases of startups. Then it classifies each use case with 5 LLMs using ensembling with majority voting.
+
+Statu: In progress
