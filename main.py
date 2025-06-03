@@ -63,7 +63,7 @@ def create_results_file():
     return output_sheet, output_wb
 
 def content_shortener(content_shortener_model, prompts_obj, page_content):
-    chat_shorten_page_obj = ChatGPT(content_shortener_model, prompts_obj.shorten_page_content(page_content), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+    chat_shorten_page_obj = ChatGPT(content_shortener_model, prompts_obj.shorten_page_content(page_content), [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
     chat_shorten_page_response, input_tokens, output_tokens = chat_shorten_page_obj.chat_model()
     # print(f"Shortened Page Content: {chat_shorten_page_response}")
 
@@ -85,7 +85,7 @@ def traverse_links(web_scraper_obj, links, model_name, content_shortener_model, 
             web_scraper_obj.set_token_cost(input_tokens, output_tokens, content_shortener_model)
 
 
-            chat_use_case_obj = ChatGPT(model_name, prompts_obj.update_startup_summary(f"\n\n".join(ai_use_cases), shortened_content), [], OpenAI(api_key=os.getenv("MY_KEY"), max_retries=5))
+            chat_use_case_obj = ChatGPT(model_name, prompts_obj.update_startup_summary(f"\n\n".join(ai_use_cases), shortened_content), [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
             chat_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
 
             # Update token cost
@@ -138,7 +138,6 @@ def extract_use_cases_from_response(use_cases_full_text):
     return all_use_cases    
 
 
-
 def gpt_search(web_search_model, url, prompts_obj, web_scraper_obj):
     gpt_use_case_response = ""
     for _ in range(6):
@@ -161,7 +160,7 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
     # Create a workbook and select the active worksheet
     wb = Workbook()
     ws = wb.active
-    workbook_filename = "Left out.xlsx"
+    workbook_filename = "Results.xlsx" # File to store the results
     # Add a header row
     ws.append(["Startup Name", "Generated Text", "Token Cost ($)"])
     wb.save(workbook_filename)
@@ -170,7 +169,7 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
 
 
     # CSV
-    csv_filename = "Left_out.csv"
+    csv_filename = "Results.csv" # Store in a separate CSV file
     with open(csv_filename, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["Startup Name", "Generated Text", "Token Cost ($)"])
@@ -194,17 +193,15 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
     MAX_API_TRIES = 4
     retry_delay = 10
 
-    start_index = 38
-    end_index = 160
+    start_index = 0
+    end_index = 200
 
-    target_indexes = [160, 321, 482, 642]
-
-    with open('datasets/Use Cases/3_use_cases.json', 'r') as file:
+    with open('example_use_cases.json', 'r') as file:
         json_data = json.load(file)
 
         companies = json_data['companies']
-        for idx in target_indexes:
-            if idx < len(companies):  # Prevent IndexError
+        for idx in range(start_index, end_index):
+            if idx < len(companies):
                 company = companies[idx]
                 startup_name = company['company_name']
                 print(f"JSON Index: {idx}\nStartup Name: {startup_name}")
@@ -311,13 +308,6 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                             else:
                                 web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=mistral_model)
                                 raise RuntimeError("Mistral Classification failed") from e
-
-
-                    # test_strings.test_string_1 += "\n\n########END OF USE CASE########\n\n"
-                    # test_strings.test_string_2 += "\n\n########END OF USE CASE########\n\n"
-                    # test_strings.test_string_3 += "\n\n########END OF USE CASE########\n\n"
-                    # test_strings.test_string_4 += "\n\n########END OF USE CASE########\n\n"
-                    # test_strings.test_string_5 += "\n\n########END OF USE CASE########\n\n"
 
 
                     # final_string = f"{test_strings.test_string_1}{test_strings.test_string_2}{test_strings.test_string_3}{test_strings.test_string_4}{test_strings.test_string_5}"

@@ -18,6 +18,7 @@ commands.txt
 Local Input
 Local Output
 All Batches/
+Extras/
 
 models/
 !ollama/*.ipynb
