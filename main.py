@@ -196,7 +196,7 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
     start_index = 0
     end_index = 200
 
-    with open('example_use_cases.json', 'r') as file:
+    with open('datasets/Use Cases/example_use_cases.json', 'r') as file:
         json_data = json.load(file)
 
         companies = json_data['companies']

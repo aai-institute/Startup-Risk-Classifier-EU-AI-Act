@@ -1,0 +1,17 @@
+{
+    "companies": [
+        {
+            "company_name": "10AI GmbH",
+            "use_cases": [
+                {
+                    "use_case_name": "Total Store Simulation",
+                    "use_case_description": "10AI employs AI to simulate in-store customer behavior, allowing retailers to predict the impact of store layout changes on overall performance. This solution is deployed in the retail sector, providing a virtual environment to test different store configurations before actual implementation. The system operates with a high level of autonomy, utilizing machine learning algorithms trained on real-world data to forecast shopper movements and interactions within the store. The primary data used includes customer flow patterns, purchase histories, and spatial layouts. The primary users are retail store designers and managers seeking to optimize store layouts for enhanced customer experience and sales performance. The AI system is adaptive, learning from new data to refine its predictions over time. While not safety-critical, the system significantly impacts business decisions and customer satisfaction by enabling data-driven store design."
+                },
+                {
+                    "use_case_name": "Mission Simulator",
+                    "use_case_description": "10AI's Mission Simulator utilizes AI to analyze and predict individual customer pathways within a store, enabling retailers to understand and optimize specific shopping missions. This application is deployed in the retail sector, focusing on enhancing the efficiency of customer journeys through the store. The system operates autonomously, employing algorithms trained on actual customer behavior data to simulate and compare different shopping scenarios. It uses data such as customer demographics, shopping habits, and store layouts. The primary users are retail strategists and store planners aiming to tailor the shopping experience to various customer needs. The AI system is adaptive, continuously learning from new customer behavior data to improve its simulations. While not safety-critical, it plays a crucial role in optimizing store layouts to enhance customer satisfaction and sales."
+                }
+            ]
+        }
+    ]
+}

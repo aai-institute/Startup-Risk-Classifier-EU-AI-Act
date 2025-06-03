@@ -9,7 +9,7 @@ custom-env/
 *.pyc
 *.json
 *.vscode
-datasets/
+datasets/**
 */__pycache__/
 Previous Results/
 Excel Files/
@@ -23,3 +23,9 @@ Extras/
 models/
 !ollama/*.ipynb
 !Notebook Steps/Use Cases Steps.ipynb
+
+
+# Exceptions
+!datasets/
+!datasets/Use Cases/
+!datasets/Use Cases/example_use_cases.json
