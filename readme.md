@@ -5,8 +5,8 @@ The repo is a Python implementation of an AI agent that generates AI use cases o
 
 ## Features
 
-- **Collection of Use Cases:**: Uses GPT Web Search API to collect AI startup use cases.
-- **Risk Classification**: Uses model ensembling with 5 state-of-the-art-llms: ChatGPT 4o
+- **Collection of Use Cases:** Uses GPT Web Search API to collect AI startup use cases.
+- **Risk Classification:** Uses model ensembling with 5 state-of-the-art-llms: ChatGPT 4o
   - ChatGPT 4o  
   - Claude 3.7 Sonnet  
   - DeepSeek Reasoner  
