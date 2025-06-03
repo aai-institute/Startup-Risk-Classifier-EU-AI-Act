@@ -22,7 +22,7 @@ The approach is **Explainable zero-shot classification**. A classification promp
 python ./main.py
 ```
 
-## Other Features:
+## Notes:
 - A sample input is included at `datasets\Use Cases\example_use_cases.json`
 - To generate new AI use cases, use the `gpt_search` function in `main.py`
 
