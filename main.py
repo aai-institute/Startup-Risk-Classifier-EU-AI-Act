@@ -17,7 +17,7 @@ from openpyxl import Workbook
 from Classes import ChatGPT, Prompts, WebScraper, TextExtractor
 from large_prompts.master_prompt import master_prompt
 from re_functions.use_case_extractor import extract_use_cases
-from simple_model_functions.api_functions import *
+from simple_model_functions.api_functions import gemini_api, mistral_api
 
 
 # Load environment variables
@@ -156,6 +156,41 @@ def gpt_search(web_search_model, url, prompts_obj, web_scraper_obj):
     return gpt_use_case_response
 
 
+def call_model_with_retry(model_name, model_type, formatted_prompt, web_scraper_obj, max_retries=4, retry_delay=10):
+    """
+    Generic function to call any model with retry logic
+    """
+    for attempt in range(max_retries):
+        try:
+            if model_type == "chatgpt":
+                chat_obj = ChatGPT(model_name, formatted_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
+                response, input_tokens, output_tokens = chat_obj.chat_model()
+            elif model_type == "claude":
+                response, input_tokens, output_tokens = claude_api(model_name, formatted_prompt)
+            elif model_type == "deepseek":
+                chat_obj = ChatGPT(model_name, formatted_prompt, [], OpenAI(api_key=os.getenv("DEEPSEEK_KEY"), max_retries=5, base_url="https://api.deepseek.com"))
+                response, input_tokens, output_tokens = chat_obj.chat_model()
+            elif model_type == "gemini":
+                response, input_tokens, output_tokens = gemini_api(model_name, formatted_prompt)
+            elif model_type == "mistral":
+                response, input_tokens, output_tokens = mistral_api(model_name, formatted_prompt)
+            else:
+                raise ValueError(f"Unknown model type: {model_type}")
+            
+            # Update token cost
+            web_scraper_obj.set_token_cost(input_tokens, output_tokens, model_name)
+            response += "\n\n########END OF USE CASE########\n\n"
+            return response
+            
+        except Exception as e:
+            print(f"Error in {model_type.upper()} API call. Attempt {attempt + 1}: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+            else:
+                web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=model_name)
+                raise RuntimeError(f"{model_type.upper()} Classification failed") from e
+
+
 def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_model, mistral_model):
     # Create a workbook and select the active worksheet
     wb = Workbook()
@@ -206,113 +241,33 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                 startup_name = company['company_name']
                 print(f"JSON Index: {idx}\nStartup Name: {startup_name}")
 
+                # Define model configurations
+                model_configs = [
+                    (chatgpt_model, "chatgpt", "ChatGPT 4o"),
+                    (claude_model, "claude", "Claude 3.7 Sonnet"),
+                    (deepseek_model, "deepseek", "DeepSeek Reasoner"),
+                    (gemini_model, "gemini", "Gemini 2.0 Flash Thinker"),
+                    (mistral_model, "mistral", "Mistral Large")
+                ]
+
                 longest_reasoned_use_case_string = ""
                 for use_case in company['use_cases']:
                     # print(use_case)
                     use_case_string = f"AI Use Case: {use_case["use_case_name"]}\nUse Case Description: {use_case["use_case_description"]}"
                     # print(use_case_string)
 
+                    # Prepare the prompt with the use case
+                    formatted_prompt = prompts_obj.prepare_AI_Act_prompt(master_prompt, use_case_string)
+                    
+                    # Call all models and collect responses
+                    model_responses = []
+                    for model_name, model_type, display_name in model_configs:
+                        response = call_model_with_retry(model_name, model_type, formatted_prompt, web_scraper_obj, MAX_API_TRIES, retry_delay)
+                        model_responses.append(response)
+                        # print(f"\n\nFrom {display_name}:\n{response}")
 
-                    for attempt in range(MAX_API_TRIES):
-                        try:
-                            # Chatgpt-latest
-                            chat_use_case_obj = ChatGPT(chatgpt_model, master_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
-                            chatgpt_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
-                            # Update token cost
-                            web_scraper_obj.set_token_cost(input_tokens, output_tokens, chatgpt_model)
-
-                            chatgpt_use_case_response += "\n\n########END OF USE CASE########\n\n"
-                            # print(f"\n\nFrom ChatGPT:\n{chatgpt_use_case_response}")
-                            break
-                        except Exception as e:
-                            print(f"Error in ChatGPT API call. Attempt {attempt + 1}: {e}")
-                            if attempt < MAX_API_TRIES - 1:
-                                time.sleep(retry_delay)
-                            else:
-                                web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=chatgpt_model)
-                                raise RuntimeError("ChatGPT Classification failed") from e
-
-
-                    for attempt in range(MAX_API_TRIES):
-                        try:
-                            # Pass to Claude model
-                            claude_use_case_response, input_tokens, output_tokens = claude_api(claude_model, master_prompt)
-                            # Update token cost
-                            web_scraper_obj.set_token_cost(input_tokens, output_tokens, claude_model)
-
-                            claude_use_case_response += "\n\n########END OF USE CASE########\n\n"                
-                            # print(f"\n\n\nFrom Claude:\n\n{claude_use_case_response}")
-                            break
-                        except Exception as e:
-                            print(f"Error in Claude API call. Attempt {attempt + 1}: {e}")
-                            if attempt < MAX_API_TRIES - 1:
-                                time.sleep(retry_delay)
-                            else:
-                                web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=claude_model)
-                                raise RuntimeError("Claude Classification failed") from e
-
-
-                    for attempt in range(MAX_API_TRIES):
-                        try:
-                            # Pass to Deepseek-reasoner
-                            deepseek_use_case_obj = ChatGPT(deepseek_model, master_prompt, [], OpenAI(api_key=os.getenv("DEEPSEEK_KEY"), max_retries=5, base_url="https://api.deepseek.com"))
-                            deepseek_use_case_response, input_tokens, output_tokens = deepseek_use_case_obj.chat_model()
-                            # Update token cost
-                            web_scraper_obj.set_token_cost(input_tokens, output_tokens, deepseek_model)
-
-                            deepseek_use_case_response += "\n\n########END OF USE CASE########\n\n"
-                            # print(f"\n\n\nFrom Deepseek:\n\n{deepseek_use_case_response}")
-                            break
-                        except Exception as e:
-                            print(f"Error in Deepseek-reasoner API call. Attempt {attempt + 1}: {e}")
-                            if attempt < MAX_API_TRIES - 1:
-                                time.sleep(retry_delay)
-                            else:
-                                web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=deepseek_model)
-                                raise RuntimeError("Deepseek-reasoner Classification failed") from e
-
-
-                    for attempt in range(MAX_API_TRIES):
-                        try:
-                            # Pass to gemini-2.0-flash-thinking
-                            gemini_response, input_tokens, output_tokens = gemini_api(gemini_model, master_prompt)
-                            # Update token cost
-                            web_scraper_obj.set_token_cost(input_tokens, output_tokens, gemini_model)
-
-                            gemini_response += "\n\n########END OF USE CASE########\n\n"
-                            # print(f"\n\n\nFrom Gemini:\n\n{gemini_response}")
-                            break
-                        except Exception as e:
-                            print(f"Error in Gemini API call. Attempt {attempt + 1}: {e}")
-                            if attempt < MAX_API_TRIES - 1:
-                                time.sleep(retry_delay)
-                            else:
-                                web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=gemini_model)
-                                raise RuntimeError("Gemini Classification failed") from e
-
-
-                    for attempt in range(MAX_API_TRIES):
-                        try:
-                            # Pass to mistral model
-                            mistral_response, input_tokens, output_tokens = mistral_api(mistral_model, master_prompt)
-                            # Update token cost
-                            web_scraper_obj.set_token_cost(input_tokens, output_tokens, mistral_model)
-
-                            mistral_response += "\n\n########END OF USE CASE########\n\n"
-                            # print(f"\n\n\nFrom Mistral:\n\n{mistral_response}")
-                            break
-                        except Exception as e:
-                            print(f"Error in Mistral API call. Attempt {attempt + 1}: {e}")
-                            if attempt < MAX_API_TRIES - 1:
-                                time.sleep(retry_delay)
-                            else:
-                                web_scraper_obj.set_token_cost(input_tokens=0, output_tokens=0, model_name=mistral_model)
-                                raise RuntimeError("Mistral Classification failed") from e
-
-
-                    # final_string = f"{test_strings.test_string_1}{test_strings.test_string_2}{test_strings.test_string_3}{test_strings.test_string_4}{test_strings.test_string_5}"
-                    final_string = f"{chatgpt_use_case_response}{claude_use_case_response}{deepseek_use_case_response}{gemini_response}{mistral_response}"
-                    # final_string = f"{mistral_response}"
+                    # Combine all responses
+                    final_string = "".join(model_responses)
 
 
                     # Get the combined json from all models
@@ -324,8 +279,8 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
                     
 
                     # Create a dictionary to store the votes and store individual classifications from all models
-                    # claude-3-7-sonnet
-                    voters = ["ChatGPT 4o", "Claude 3.7 Sonnet", "DeepSeek Reasoner", "Gemini 2.0 Flash Thinker", "Mistral Large"]
+                    # Use display names from model configuration
+                    voters = [config[2] for config in model_configs]
                     votings = {}
                     classifications_list = []
                     # Iterate through the result JSON and count votes for each classification
