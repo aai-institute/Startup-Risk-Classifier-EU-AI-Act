@@ -5,16 +5,15 @@ import ast
 import json
 import time
 import csv
-
+import argparse
 # Third-Party Library
-import openpyxl
 from dotenv import load_dotenv
 from openai import OpenAI
 import anthropic
-from openpyxl import Workbook
+import urllib
 
 # Local Imports
-from Classes import ChatGPT, Prompts, WebScraper, TextExtractor
+from Classes import ChatGPT, Prompts, WebScraper
 from large_prompts.master_prompt import master_prompt
 from re_functions.use_case_extractor import extract_use_cases
 from simple_model_functions.api_functions import gemini_api, mistral_api
@@ -50,111 +49,50 @@ def claude_api(model, prompt):
 
     return message_content, input_tokens, output_tokens
 
-def load_startups_excel(startups_file):
-    sheet = openpyxl.load_workbook(startups_file)["AI Use Cases"]
-    return sheet
+def claude_search(web_search_model, url, web_scraper_obj):
+    client = anthropic.Anthropic(api_key=os.getenv("MY_ANTHROPIC_KEY"))
 
-def create_results_file():    
-    # Save the results to a new Excel file
-    output_wb = openpyxl.Workbook()
-    output_sheet = output_wb.active
-    output_sheet.title = "AI Use Cases"
+    response = client.messages.create(
+        model=web_search_model,
+        max_tokens=12000,
+        messages=[
+            {
+                "role": "user",
+                "content": f"""Identify and list the top 5 AI use cases, AI systems, or artificial intelligence applications on {url} as individual entries (provide fewer if less than 5 exist). For each distinct AI system (treat each AI module, tool, or application as separate even if part of the same platform), provide comprehensive details including:
+- What specific data is collected and processed (including biometric, personal, behavioral data)
+- How automated decisions are made and what decisions the AI makes
+- Level of human oversight (fully automated vs human-in-the-loop vs human review)
+- Who is directly affected by the AI system's outputs and decisions
+- Specific business impact and consequences of the AI's decisions
+- Technical implementation details about functionality, scope, and processing methods
+- Whether users/affected parties are informed about AI usage
+- Any compliance, privacy, or safety measures mentioned
 
-    return output_sheet, output_wb
+Present each AI system as a separate, standalone use case with its own complete description, even if they're components of a larger platform. Start each use case with ###### followed by the use case name."""
+            }
+        ],
+        tools=[{
+            "type": "web_search_20250305",
+            "name": "web_search",
+            "max_uses": 5,
+            "allowed_domains": [f"{url}"],
 
-def content_shortener(content_shortener_model, prompts_obj, page_content):
-    chat_shorten_page_obj = ChatGPT(content_shortener_model, prompts_obj.shorten_page_content(page_content), [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
-    chat_shorten_page_response, input_tokens, output_tokens = chat_shorten_page_obj.chat_model()
-    # print(f"Shortened Page Content: {chat_shorten_page_response}")
-
-    return chat_shorten_page_response, input_tokens, output_tokens
-
-def traverse_links(web_scraper_obj, links, model_name, content_shortener_model, ai_use_cases, prompts_obj):
-    
-    try:
-        # Traverse the important links
-        for link in links:
-            web_scraper_obj.set_url(link)
-            # print(f"Going into relavant link: {link}")
-            web_scraper_obj.load_page()
-            page_content = web_scraper_obj.get_page_content(model_name)
-
-            # Shorten the content
-            shortened_content, input_tokens, output_tokens = content_shortener(content_shortener_model, prompts_obj, page_content)
-            # Update token cost
-            web_scraper_obj.set_token_cost(input_tokens, output_tokens, content_shortener_model)
-
-
-            chat_use_case_obj = ChatGPT(model_name, prompts_obj.update_startup_summary(f"\n\n".join(ai_use_cases), shortened_content), [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
-            chat_use_case_response, input_tokens, output_tokens = chat_use_case_obj.chat_model()
-
-            # Update token cost
-            web_scraper_obj.set_token_cost(input_tokens, output_tokens, model_name)
-            
-            ai_use_cases.append(chat_use_case_response)
-    
-    except Exception as e:
-        # Return error message only
-        return ["Page Error: Unable to traverse links"]
+            "user_location": {
+                "type": "approximate",
+                "city": "Berlin",
+                "region": "Berlin",
+                "country": "DE",
+                "timezone": "Europe/Berlin"
+            }
+        }]
+    )
 
 
-    return ai_use_cases
+    # Extract final answer text from response
+    text_blocks = [block.text for block in response.content if block.type == 'text' and block.text]
+    full_answer = ''.join(text_blocks)
 
-def extract_list(input_string):
-    # Regular expression to match Python-style lists
-    list_pattern = r"\[.*?\]"
-    match = re.search(list_pattern, input_string)
-    if match:
-        return ast.literal_eval(match.group())
-    return None
-
-
-def save_to_excel(output_sheet, output_wb, startup_name, url, redirect_url, use_cases_combined, eu_ai_act_response, total_token_cost, output_filename):
-    headers = ["Startup Name", "Homepage URL", "Redirected URL", "AI Use Cases" , "EU AI Act Risk Classification", "Total Token Cost ($)"]
-    
-    # Write headers if not present
-    if output_sheet.max_row < 2:
-        output_sheet.append(headers)
-
-    # Write data
-    
-    row = [startup_name, url, redirect_url, use_cases_combined, eu_ai_act_response, total_token_cost]
-
-    output_sheet.append(row)
-    output_wb.save(f"{output_filename}")
-
-
-def extract_use_cases_from_response(use_cases_full_text):
-    all_use_cases = []
-    # Extract each AI use case from the full text
-    text_extractor = TextExtractor(use_cases_full_text)
-    text_extractor.set_use_cases()
-    df_use_cases = text_extractor.get_use_cases()
-    
-    for index, row in df_use_cases.iterrows():
-        row_string = "\n".join(f"{col}: {val}" for col, val in row.items())
-        all_use_cases.append(row_string + '\n\n')
-    
-    return all_use_cases    
-
-
-def gpt_search(web_search_model, url, prompts_obj, web_scraper_obj):
-    gpt_use_case_response = ""
-    for _ in range(6):
-        # Use the web search tool to generate new use cases
-        gpt_use_case_obj = ChatGPT(web_search_model, prompts_obj.generate_use_case_gpt(url), [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
-        gpt_use_case_response, input_tokens, output_tokens = gpt_use_case_obj.chat_model()
-        # Update token cost
-        web_scraper_obj.set_token_cost(input_tokens, output_tokens, web_search_model)
-
-        if gpt_use_case_response and "No information found" not in gpt_use_case_response:
-            break
-        else:
-            print(f"\nNo Use Cases generated.Retrying...\n")
-            gpt_use_case_response = ""
-
-    return gpt_use_case_response
-
+    return full_answer
 
 def call_model_with_retry(model_name, model_type, formatted_prompt, web_scraper_obj, max_retries=4, retry_delay=10):
     """
@@ -191,25 +129,124 @@ def call_model_with_retry(model_name, model_type, formatted_prompt, web_scraper_
                 raise RuntimeError(f"{model_type.upper()} Classification failed") from e
 
 
-def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_model, mistral_model):
-    # Create a workbook and select the active worksheet
-    wb = Workbook()
-    ws = wb.active
-    workbook_filename = "Results.xlsx" # File to store the results
-    # Add a header row
-    ws.append(["Startup Name", "Generated Text", "Token Cost ($)"])
-    wb.save(workbook_filename)
-    # Excel start row number
-    row_num = 2
+def use_case_separator(all_use_cases):
+    # Find all headings that mark new use cases (e.g., "###### Use Case Name")
+    sections = re.split(r'\n###### (.+)', all_use_cases)
+
+    # Organize the extracted parts into a dictionary
+    use_cases = {}
+    for i in range(1, len(sections), 2):
+        name = sections[i].strip()
+        content = sections[i + 1].strip()
+        use_cases[name] = content
+
+    # for name, content in use_cases.items():
+    #     print(f"--- Use Case: {name} ---\n{content}\n\n\n\n\n\n")
+
+    return use_cases
 
 
-    # CSV
-    csv_filename = "Results.csv" # Store in a separate CSV file
-    with open(csv_filename, mode="w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(["Startup Name", "Generated Text", "Token Cost ($)"])
+def run_search_workflow(input_file, output_file):
+    """
+    Process URLs from a CSV file using claude_search and output results to a new CSV file
+    """
+    web_search_model = "claude-3-7-sonnet-20250219"
+    
+    try:
+        # Initialize WebScraper for token cost tracking
+        web_scraper_obj = WebScraper()
+        
+        # Initialize output CSV file
+        with open(output_file, mode="w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Company Name", "Use Case Name", "Use Case Description"])
+        
+        # Read input CSV file
+        with open(input_file, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            
+            for row_idx, row in enumerate(reader):
+                company_name = row.get("Company Name", "")
+                url = row.get("URLs", "") or row.get("URL", "")
+                
+                # If no company name provided, try to extract from URL
+                if not company_name and url:
+                    parsed_url = urllib.parse.urlparse(url)
+                    domain = parsed_url.netloc
+                    domain_parts = domain.split('.')
+                    if len(domain_parts) >= 2:
+                        company_name = domain_parts[-2].capitalize()
+                
+                if not url:
+                    continue
+                
+                # Extract domain from URL
+                parsed_url = urllib.parse.urlparse(url)
+                domain = parsed_url.netloc
+                domain_parts = domain.split('.')
+                if len(domain_parts) >= 2:
+                    domain = '.'.join(domain_parts[-2:])
+                
+                if domain:
+                    print(f"Processing URL {row_idx + 1}: {domain} (Company: {company_name})")
+                    
+                    try:
+                        # Perform search
+                        search_result = claude_search(web_search_model, domain, web_scraper_obj)
+                        
+                        # Use the use_case_separator function to break down the use cases
+                        use_cases_dict = use_case_separator(search_result)
+                        
+                        print(f"Found {len(use_cases_dict)} use cases for {company_name}")
+                        
+                        # Append results to CSV file
+                        with open(output_file, mode="a", newline="", encoding="utf-8") as f:
+                            writer = csv.writer(f)
+                            if use_cases_dict:
+                                for use_case_name, use_case_description in use_cases_dict.items():
+                                    writer.writerow([company_name, use_case_name, use_case_description])
+                            else:
+                                # If no use cases found, create a single row with an error message
+                                writer.writerow([company_name, "No structured use cases found", "No use cases found in the search result."])
+                        
+                        print(f"Successfully processed: {url}")
+                        
+                    except Exception as e:
+                        print(f"Error processing {url}: {str(e)}")
+                        # Append error row to CSV
+                        with open(output_file, mode="a", newline="", encoding="utf-8") as f:
+                            writer = csv.writer(f)
+                            writer.writerow([company_name, "Error", f"Error: {str(e)}"])
+        
+        print(f"Search results saved to CSV: {output_file}")
+        print(f"Total token cost: ${web_scraper_obj.get_token_cost():.4f}")
+        
+    except Exception as e:
+        print(f"Error in search workflow: {str(e)}")
+        raise
 
 
+def classify_from_csv(input_csv, output_csv, models):
+    """
+    Read use cases from a CSV file and classify them one by one, saving results to CSV
+    """
+    # Model configurations with hardcoded model names
+    all_model_configs = {
+        "chatgpt": ("chatgpt-4o-latest", "chatgpt", "ChatGPT 4o"),
+        "claude": ("claude-3-7-sonnet-20250219", "claude", "Claude 3.7 Sonnet"),
+        "deepseek": ("deepseek-reasoner", "deepseek", "DeepSeek Reasoner"),
+        "gemini": ("gemini-2.0-flash-thinking-exp-01-21", "gemini", "Gemini 2.0 Flash Thinker"),
+        "mistral": ("mistral-large-latest", "mistral", "Mistral Large")
+    }
+    
+    # Filter model configurations based on user selection
+    model_configs = [all_model_configs[model] for model in models if model in all_model_configs]
+    
+    if not model_configs:
+        raise ValueError("No valid models specified")
+    
+    print(f"Using {len(model_configs)} models: {[config[2] for config in model_configs]}")
+    
     # Allowed categories
     allowed_categories = [
         'Prohibited AI system',
@@ -228,157 +265,178 @@ def multiple_model_approach(chatgpt_model, claude_model, deepseek_model, gemini_
     MAX_API_TRIES = 4
     retry_delay = 10
 
-    start_index = 0
-    end_index = 200
+    # Initialize output CSV file
+    with open(output_csv, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Company Name", "Use Case Name", "Use Case Description", "Risk Classification", "Reason", "Model Distribution", "Chosen Model", "Token Cost ($)"])
 
-    with open('datasets/Use Cases/example_use_cases.json', 'r') as file:
-        json_data = json.load(file)
-
-        companies = json_data['companies']
-        for idx in range(start_index, end_index):
-            if idx < len(companies):
-                company = companies[idx]
-                startup_name = company['company_name']
-                print(f"JSON Index: {idx}\nStartup Name: {startup_name}")
-
-                # Define model configurations
-                model_configs = [
-                    (chatgpt_model, "chatgpt", "ChatGPT 4o"),
-                    (claude_model, "claude", "Claude 3.7 Sonnet"),
-                    (deepseek_model, "deepseek", "DeepSeek Reasoner"),
-                    (gemini_model, "gemini", "Gemini 2.0 Flash Thinker"),
-                    (mistral_model, "mistral", "Mistral Large")
-                ]
-
-                longest_reasoned_use_case_string = ""
-                for use_case in company['use_cases']:
-                    # print(use_case)
-                    use_case_string = f"AI Use Case: {use_case["use_case_name"]}\nUse Case Description: {use_case["use_case_description"]}"
-                    # print(use_case_string)
-
-                    # Prepare the prompt with the use case
-                    formatted_prompt = prompts_obj.prepare_AI_Act_prompt(master_prompt, use_case_string)
-                    
-                    # Call all models and collect responses
-                    model_responses = []
-                    for model_name, model_type, display_name in model_configs:
-                        response = call_model_with_retry(model_name, model_type, formatted_prompt, web_scraper_obj, MAX_API_TRIES, retry_delay)
-                        model_responses.append(response)
-                        # print(f"\n\nFrom {display_name}:\n{response}")
-
-                    # Combine all responses
-                    final_string = "".join(model_responses)
-
-
-                    # Get the combined json from all models
-                    result_json = extract_use_cases(use_case, final_string)
-                    # print(f"Result JSON: {result_json}")
-
-                    with open('test.json', 'w') as json_file:
-                        json.dump(result_json, json_file, indent=4)
-                    
-
-                    # Create a dictionary to store the votes and store individual classifications from all models
-                    # Use display names from model configuration
-                    voters = [config[2] for config in model_configs]
-                    votings = {}
-                    classifications_list = []
-                    # Iterate through the result JSON and count votes for each classification
-                    for model_use_case in result_json:
-                        classification = model_use_case["Risk Classification"]
-                        if classification in allowed_categories:
-                            if classification not in votings:
-                                votings[classification] = 0
-                            votings[classification] += 1
-                            classifications_list.append(classification)
-                        else:
-                            # If the classification is not in the allowed categories, re-classify it as "Uncertain"
-                            model_use_case["Risk Classification"] = "Uncertain"
-                            classifications_list.append("Uncertain")
-                            if "Uncertain" not in votings:
-                                votings["Uncertain"] = 0
-                            votings["Uncertain"] += 1
-
-
-                        
-                    # Find the classification with the most votes.
-                    max_votes = max(votings.values())
-                    classifications_with_max_votes = [classification for classification, votes in votings.items() if votes == max_votes]
-                    # 3. If tie, pick least risky from the tie group
-                    if len(classifications_with_max_votes) > 1:
-                        classifications_with_max_votes.sort(
-                            key=lambda x: allowed_categories.index(x) if x in allowed_categories else -1,
-                            reverse=True
-                        )
-                    final_classification = classifications_with_max_votes[0]
-
-                    print(f"Votings: {votings}")
-                    print(f"Max Votes: {max_votes}")
-                    print(f"Classifications with max votes: {classifications_with_max_votes}")
-                    
-                    print(f"Classifications List: {classifications_list}")
-                    print(f"Final Classification: {final_classification}")
-
-
-                    # ***STORE THE VOTE DISTRIBUTION FROM EACH MODEL***
-                    model_distribution = dict(zip(voters, classifications_list))
-                    model_distribution_string = ""
-                    for model, classification in model_distribution.items():
-                        # print(f"{model}: {classification}")
-                        model_distribution_string += f"{model}: {classification}\n"
-
-
-                    # Get the use cases with the final classification
-                    filtered_use_cases = [model_use_case for model_use_case in result_json if model_use_case["Risk Classification"] == final_classification]
-                    # Get the use case with the longest reason
-                    longest_reasoned_use_case = max(filtered_use_cases, key=lambda x: len(x["Reason"]))
-                    longest_reasoned_use_case_index = result_json.index(longest_reasoned_use_case)
-
-
-                    # Attach the distribution to the longest reasoned use case
-                    longest_reasoned_use_case["Model Distribution"] = "\n"
-                    for model_distrib_index, (k,v) in enumerate(model_distribution.items()):
-                        longest_reasoned_use_case["Model Distribution"] += f"{k} => {v}"
-                        longest_reasoned_use_case["Model Distribution"] += "\n" if model_distrib_index < len(model_distribution) - 1 else ""
-                    # Attach which model it was classified from
-                    longest_reasoned_use_case["Chosen Model"] = voters[longest_reasoned_use_case_index]
-
-                    # print(f"Longest Reasoned Use Case: {longest_reasoned_use_case}")
-                    
-                    
-                    
-                    longest_reasoned_use_case_string += "\n".join(f"{k}: {v}" for k, v in longest_reasoned_use_case.items())
-                    longest_reasoned_use_case_string += "\n\n########END OF CLASSIFICATION########\n\n\n\n"
-
-                    # print(f"Model Distribution:\n{model_distribution_string}")
-                    print(f"{longest_reasoned_use_case_string}")
-
-                    # break
-
-
-            # Write the final use case string to Excel
-            ws.cell(row=row_num, column=1, value=startup_name)
-            ws.cell(row=row_num, column=2, value=longest_reasoned_use_case_string)
-            ws.cell(row=row_num, column=3, value=web_scraper_obj.get_token_cost())
-            wb.save(workbook_filename)
+    # Read input CSV file
+    with open(input_csv, mode="r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        
+        for row_idx, row in enumerate(reader):
+            company_name = row.get("Company Name", "")
+            use_case_name = row.get("Use Case Name", "")
+            use_case_description = row.get("Use Case Description", "")
             
-            # Also write the same row to CSV
-            with open(csv_filename, mode="a", newline="", encoding="utf-8") as f:
+            print(f"Processing row {row_idx + 1}: {company_name} - {use_case_name}")
+            
+            # Create use case object for processing
+            use_case = {
+                "use_case_name": use_case_name,
+                "use_case_description": use_case_description
+            }
+            
+            use_case_string = f"AI Use Case: {use_case_name}\nUse Case Description: {use_case_description}"
+            
+            # Prepare the prompt with the use case
+            formatted_prompt = prompts_obj.prepare_AI_Act_prompt(master_prompt, use_case_string)
+            
+            # Call all models and collect responses
+            model_responses = []
+            for model_name, model_type, display_name in model_configs:
+                try:
+                    response = call_model_with_retry(model_name, model_type, formatted_prompt, web_scraper_obj, MAX_API_TRIES, retry_delay)
+                    model_responses.append(response)
+                except Exception as e:
+                    print(f"Error with {display_name}: {str(e)}")
+                    model_responses.append(f"Error: {str(e)}")
+
+            # Combine all responses
+            final_string = "".join(model_responses)
+
+            # Get the combined json from all models
+            result_json = extract_use_cases(use_case, final_string)
+
+            # Create a dictionary to store the votes and store individual classifications from all models
+            voters = [config[2] for config in model_configs]
+            votings = {}
+            classifications_list = []
+            
+            # Iterate through the result JSON and count votes for each classification
+            for model_use_case in result_json:
+                classification = model_use_case["Risk Classification"]
+                if classification in allowed_categories:
+                    if classification not in votings:
+                        votings[classification] = 0
+                    votings[classification] += 1
+                    classifications_list.append(classification)
+                else:
+                    # If the classification is not in the allowed categories, re-classify it as "Uncertain"
+                    model_use_case["Risk Classification"] = "Uncertain"
+                    classifications_list.append("Uncertain")
+                    if "Uncertain" not in votings:
+                        votings["Uncertain"] = 0
+                    votings["Uncertain"] += 1
+
+            # Find the classification with the most votes
+            max_votes = max(votings.values())
+            classifications_with_max_votes = [classification for classification, votes in votings.items() if votes == max_votes]
+            
+            # If tie, pick least risky from the tie group
+            if len(classifications_with_max_votes) > 1:
+                classifications_with_max_votes.sort(
+                    key=lambda x: allowed_categories.index(x) if x in allowed_categories else -1,
+                    reverse=True
+                )
+            final_classification = classifications_with_max_votes[0]
+
+            print(f"Final Classification: {final_classification}")
+
+            # Store the vote distribution from each model
+            model_distribution = dict(zip(voters, classifications_list))
+            model_distribution_string = ""
+            for model, classification in model_distribution.items():
+                model_distribution_string += f"{model}: {classification}\n"
+
+            # Get the use cases with the final classification
+            filtered_use_cases = [model_use_case for model_use_case in result_json if model_use_case["Risk Classification"] == final_classification]
+            
+            # Get the use case with the longest reason
+            longest_reasoned_use_case = max(filtered_use_cases, key=lambda x: len(x["Reason"]))
+            longest_reasoned_use_case_index = result_json.index(longest_reasoned_use_case)
+            chosen_model = voters[longest_reasoned_use_case_index]
+
+            # Get token cost for this classification
+            token_cost = web_scraper_obj.get_token_cost()
+
+            # Write result to CSV immediately
+            with open(output_csv, mode="a", newline="", encoding="utf-8") as f:
                 writer = csv.writer(f)
-                writer.writerow([startup_name, longest_reasoned_use_case_string, web_scraper_obj.get_token_cost()])
+                writer.writerow([
+                    company_name,
+                    use_case_name,
+                    use_case_description,
+                    final_classification,
+                    longest_reasoned_use_case["Reason"],
+                    model_distribution_string.strip(),
+                    chosen_model,
+                    token_cost
+                ])
             
-            row_num += 1
-
-            # reset token cost, redirected URL
+            # Reset token cost for next iteration
             web_scraper_obj.reset_token_cost()
-            web_scraper_obj.reset_redirect_url()
+
+    print(f"Classification complete. Results saved to: {output_csv}")
 
 
-            # break
+def main():
+    parser = argparse.ArgumentParser(
+        description="EU AI Act Risk Classification Tool",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python main.py search -i companies.csv -o use_cases.csv
+  python main.py classify -i use_cases.csv -o classifications.csv
+  python main.py classify -i use_cases.csv -o classifications.csv -m chatgpt claude
+
+Input CSV Formats:
+  Search:   Company Name, URLs (or URL)
+  Classify: Company Name, Use Case Name, Use Case Description
+
+Available Models: chatgpt, claude, deepseek, gemini, mistral
+""")
+    
+    parser.add_argument("command", choices=["search", "classify"], 
+                       help="Command to run: 'search' for URL searching or 'classify' for risk classification")
+    
+    # Search and classify command arguments
+    parser.add_argument("--input-file", "-i", type=str, required=True,
+                       help="Input CSV file path")
+    parser.add_argument("--output-file", "-o", type=str, required=True,
+                       help="Output CSV file path")
+    
+    # Classification command arguments
+    parser.add_argument("--models", "-m", type=str, nargs='+', 
+                       choices=["chatgpt", "claude", "deepseek", "gemini", "mistral"],
+                       default=["chatgpt", "claude", "deepseek", "gemini", "mistral"],
+                       metavar="MODEL",
+                       help="Select one or more models for classification (default: all models)")
+    
+    args = parser.parse_args()
+    
+    if args.command == "search":
+        print(f"Running search workflow...")
+        print(f"Input CSV: {args.input_file}")
+        print(f"Output CSV: {args.output_file}")
+        
+        run_search_workflow(args.input_file, args.output_file)
+        
+    elif args.command == "classify":
+        print(f"Running classification workflow...")
+        print(f"Input CSV: {args.input_file}")
+        print(f"Output CSV: {args.output_file}")
+        print(f"Using models: {', '.join(args.models)}")
+        
+        classify_from_csv(
+            input_csv=args.input_file,
+            output_csv=args.output_file,
+            models=args.models
+        )
 
 
 if __name__ == "__main__":
-    multiple_model_approach(chatgpt_model="chatgpt-4o-latest", claude_model="claude-3-7-sonnet-20250219", deepseek_model="deepseek-reasoner", gemini_model="gemini-2.0-flash-thinking-exp-01-21", mistral_model="mistral-large-latest")
-    
+    main()
+
 
 

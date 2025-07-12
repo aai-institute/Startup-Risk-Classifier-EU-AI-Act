@@ -3,6 +3,8 @@ import tempfile
 
 class Selenium():
     def __init__(self):
+
+        return 
         unique_dir = tempfile.mkdtemp()
         # chrome_profile_path = r"C:\Users\ShahrukhAzharAhsan\AppData\Local\Google\Chrome\User Data"
 
