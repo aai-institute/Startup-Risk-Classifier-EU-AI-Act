@@ -25,7 +25,7 @@ class WebScraper(LinkWorker):
             input_cost = (input_tokens / 1000) * 0.0025
             output_cost = (output_tokens / 1000) * 0.01
             self.__total_token_cost += input_cost + output_cost
-        elif model_name == "claude-3-7-sonnet-20250219":
+        elif model_name == "claude-3-7-sonnet-20250219" or model_name == "claude-sonnet-4-20250514":
             input_cost = (input_tokens / 1000) * 0.003
             output_cost = (output_tokens / 1000) * 0.015
             self.__total_token_cost += input_cost + output_cost

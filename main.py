@@ -219,7 +219,7 @@ def run_search_workflow(input_file, output_file):
                             writer.writerow([company_name, "Error", f"Error: {str(e)}"])
         
         print(f"Search results saved to CSV: {output_file}")
-        print(f"Total token cost: ${web_scraper_obj.get_token_cost():.4f}")
+        # print(f"Total token cost: ${web_scraper_obj.get_token_cost():.4f}")
         
     except Exception as e:
         print(f"Error in search workflow: {str(e)}")
@@ -233,7 +233,7 @@ def classify_from_csv(input_csv, output_csv, models):
     # Model configurations with hardcoded model names
     all_model_configs = {
         "chatgpt": ("chatgpt-4o-latest", "chatgpt", "ChatGPT 4o"),
-        "claude": ("claude-3-7-sonnet-20250219", "claude", "Claude 3.7 Sonnet"),
+        "claude": ("claude-sonnet-4-20250514", "claude", "Claude Sonnet 4"),
         "deepseek": ("deepseek-reasoner", "deepseek", "DeepSeek Reasoner"),
         "gemini": ("gemini-2.0-flash-thinking-exp-01-21", "gemini", "Gemini 2.0 Flash Thinker"),
         "mistral": ("mistral-large-latest", "mistral", "Mistral Large")
@@ -340,8 +340,7 @@ def classify_from_csv(input_csv, output_csv, models):
                     reverse=True
                 )
             final_classification = classifications_with_max_votes[0]
-
-            print(f"Final Classification: {final_classification}")
+            # print(f"Final Classification: {final_classification}")
 
             # Store the vote distribution from each model
             model_distribution = dict(zip(voters, classifications_list))
@@ -409,9 +408,9 @@ Available Models: chatgpt, claude, deepseek, gemini, mistral
     # Classification command arguments
     parser.add_argument("--models", "-m", type=str, nargs='+', 
                        choices=["chatgpt", "claude", "deepseek", "gemini", "mistral"],
-                       default=["chatgpt", "claude", "deepseek", "gemini", "mistral"],
+                       default=["claude"],
                        metavar="MODEL",
-                       help="Select one or more models for classification (default: all models)")
+                       help="Select one or more models for classification (default: claude)")
     
     args = parser.parse_args()
     
