@@ -1,31 +1,14 @@
-new-env/
-custom-env/
+# Files
 .env
 *.ipynb
-!Excel Tabs.ipynb
 *.xlsx
 *.docx
 *.csv
 *.pyc
 *.json
 *.vscode
-datasets/**
+
+# Directories
 */__pycache__/
-Previous Results/
-Excel Files/
-All Results/
-commands.txt
-Local Input
-Local Output
-All Batches/
-Extras/
-
-models/
-!ollama/*.ipynb
-!Notebook Steps/Use Cases Steps.ipynb
-
-
-# Exceptions
-!datasets/
-!datasets/Use Cases/
-!datasets/Use Cases/example_use_cases.json
+new-env/
+datasets/
