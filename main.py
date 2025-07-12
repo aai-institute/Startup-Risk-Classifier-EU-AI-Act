@@ -157,12 +157,12 @@ def run_search_workflow(input_file, output_file):
         web_scraper_obj = WebScraper()
         
         # Initialize output CSV file
-        with open(output_file, mode="w", newline="", encoding="utf-8") as f:
+        with open(output_file, mode="w", newline="", encoding="utf-8-sig") as f:
             writer = csv.writer(f)
             writer.writerow(["Company Name", "Use Case Name", "Use Case Description"])
         
         # Read input CSV file
-        with open(input_file, mode="r", encoding="utf-8") as f:
+        with open(input_file, mode="r", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             
             for row_idx, row in enumerate(reader):
@@ -200,7 +200,7 @@ def run_search_workflow(input_file, output_file):
                         print(f"Found {len(use_cases_dict)} use cases for {company_name}")
                         
                         # Append results to CSV file
-                        with open(output_file, mode="a", newline="", encoding="utf-8") as f:
+                        with open(output_file, mode="a", newline="", encoding="utf-8-sig") as f:
                             writer = csv.writer(f)
                             if use_cases_dict:
                                 for use_case_name, use_case_description in use_cases_dict.items():
@@ -214,7 +214,7 @@ def run_search_workflow(input_file, output_file):
                     except Exception as e:
                         print(f"Error processing {url}: {str(e)}")
                         # Append error row to CSV
-                        with open(output_file, mode="a", newline="", encoding="utf-8") as f:
+                        with open(output_file, mode="a", newline="", encoding="utf-8-sig") as f:
                             writer = csv.writer(f)
                             writer.writerow([company_name, "Error", f"Error: {str(e)}"])
         
@@ -266,12 +266,12 @@ def classify_from_csv(input_csv, output_csv, models):
     retry_delay = 10
 
     # Initialize output CSV file
-    with open(output_csv, mode="w", newline="", encoding="utf-8") as f:
+    with open(output_csv, mode="w", newline="", encoding="utf-8-sig") as f:
         writer = csv.writer(f)
         writer.writerow(["Company Name", "Use Case Name", "Use Case Description", "Risk Classification", "Reason", "Model Distribution", "Chosen Model", "Token Cost ($)"])
 
     # Read input CSV file
-    with open(input_csv, mode="r", encoding="utf-8") as f:
+    with open(input_csv, mode="r", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         
         for row_idx, row in enumerate(reader):
@@ -361,7 +361,7 @@ def classify_from_csv(input_csv, output_csv, models):
             token_cost = web_scraper_obj.get_token_cost()
 
             # Write result to CSV immediately
-            with open(output_csv, mode="a", newline="", encoding="utf-8") as f:
+            with open(output_csv, mode="a", newline="", encoding="utf-8-sig") as f:
                 writer = csv.writer(f)
                 writer.writerow([
                     company_name,
