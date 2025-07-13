@@ -11,7 +11,7 @@ This tool provides two main functionalities:
 Extract AI use cases from websites listed in a CSV file and output structured use cases:
 
 ```bash
-python main.py search --input-file sample_urls.csv --output-file search_results.csv
+python main.py search --input-file startups.csv --output-file use_cases.csv
 ```
 
 **Options:**
@@ -108,7 +108,7 @@ The tool classifies AI systems into these categories:
 
 ## Sample Files
 
-### Sample CSV file for search (sample_urls.csv)
+### Sample CSV file for search (startups.csv)
 ```csv
 Company Name,URLs
 OpenAI,https://openai.com
@@ -130,7 +130,7 @@ Make sure you have the following environment variables set:
 ### Complete Search-to-Classification Workflow
 ```bash
 # Step 1: Search for AI use cases from websites
-python main.py search -i sample_urls.csv -o use_cases.csv
+python main.py search -i startups.csv -o use_cases.csv
 
 # Step 2: Classify the extracted use cases using the default model (Claude Sonnet 4)
 python main.py classify -i use_cases.csv -o classifications.csv
@@ -139,5 +139,5 @@ python main.py classify -i use_cases.csv -o classifications.csv
 **Streamlined Workflow:**
 ```bash
 # One-liner workflow using CSV files
-python main.py search -i sample_urls.csv -o use_cases.csv && python main.py classify -i use_cases.csv -o classifications.csv
+python main.py search -i startups.csv -o use_cases.csv && python main.py classify -i use_cases.csv -o classifications.csv
 ```
