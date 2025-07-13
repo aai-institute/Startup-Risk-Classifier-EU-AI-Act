@@ -14,7 +14,7 @@ def claude_search(web_search_model, url):
     """
 
 
-    client = anthropic.Anthropic(api_key=os.getenv("MY_ANTHROPIC_KEY"))
+    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_KEY"))
 
     response = client.messages.create(
         model=web_search_model,

@@ -17,7 +17,7 @@ def claude_api(model, prompt):
 
     try:
         client = anthropic.Anthropic(
-            api_key=os.getenv("MY_ANTHROPIC_KEY")
+            api_key=os.getenv("ANTHROPIC_KEY")
         )
         message = client.messages.create(
             model=model,
@@ -39,7 +39,7 @@ def claude_api(model, prompt):
 
 def gemini_api(model, prompt):
 
-    genai.configure(api_key=os.getenv("GEMINI"))
+    genai.configure(api_key=os.getenv("GEMINI_KEY"))
 
     # Create the model
     generation_config = {
@@ -70,7 +70,7 @@ def gemini_api(model, prompt):
     return reponse_message, input_tokens, output_tokens
 
 def mistral_api(model, prompt):
-    client = Mistral(api_key=os.getenv("MISTRAL"))
+    client = Mistral(api_key=os.getenv("MISTRAL_KEY"))
 
     chat_response = client.chat.complete(
         model = model,

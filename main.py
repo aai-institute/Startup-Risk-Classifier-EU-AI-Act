@@ -32,7 +32,7 @@ def call_model_with_retry(model_name, model_type, formatted_prompt, web_scraper_
     for attempt in range(max_retries):
         try:
             if model_type == "chatgpt":
-                chat_obj = ChatGPT(model_name, formatted_prompt, [], OpenAI(api_key=os.getenv("MY_1_KEY"), max_retries=5))
+                chat_obj = ChatGPT(model_name, formatted_prompt, [], OpenAI(api_key=os.getenv("OpenAI_KEY"), max_retries=5))
                 response, input_tokens, output_tokens = chat_obj.chat_model()
             elif model_type == "claude":
                 response, input_tokens, output_tokens = claude_api(model_name, formatted_prompt)
@@ -102,7 +102,7 @@ def run_search_workflow(input_file, output_file):
             
             for row_idx, row in enumerate(reader):
                 company_name = row.get("Company Name", "")
-                url = row.get("URLs", "") or row.get("URL", "")
+                url = row.get("URLs", "")
                 
                 # If no company name provided, try to extract from URL
                 if not company_name and url:
