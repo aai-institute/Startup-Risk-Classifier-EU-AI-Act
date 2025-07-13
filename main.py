@@ -85,7 +85,7 @@ def run_search_workflow(input_file, output_file):
     """
     Process URLs from a CSV file using claude_search and output results to a new CSV file
     """
-    web_search_model = "claude-3-7-sonnet-20250219"
+    web_search_model = "claude-sonnet-4-20250514"
     
     try:
         # Initialize WebScraper for token cost tracking
