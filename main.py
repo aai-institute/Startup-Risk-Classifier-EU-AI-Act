@@ -372,7 +372,7 @@ Available Models: chatgpt, claude, deepseek, gemini, mistral
 if __name__ == "__main__":
     main()
 
-    # prompt = "hello world"
+    # prompt = "Hi there!"
     # response, input_tokens, output_tokens = claude_api("claude-3-5-haiku-latest", prompt)
     # print(f"Claude Response: {response}")
     # print(f"Input tokens: {input_tokens}, Output tokens: {output_tokens}")
