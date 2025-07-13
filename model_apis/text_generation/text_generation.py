@@ -1,5 +1,3 @@
-__all__ = ["gemini_api", "mistral_api"]
-
 import os
 import google.generativeai as genai
 from mistralai import Mistral
@@ -7,7 +5,37 @@ from mistralai import Mistral
 from dotenv import load_dotenv
 from pathlib import Path
 
-load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
+import anthropic
+
+
+did_env_load = load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent.parent / ".env")
+
+
+def claude_api(model, prompt):
+    """Call the Claude API with the given model and prompt.\n
+    Returns the response message, input tokens, and output tokens."""
+
+    try:
+        client = anthropic.Anthropic(
+            api_key=os.getenv("MY_ANTHROPIC_KEY")
+        )
+        message = client.messages.create(
+            model=model,
+            max_tokens=8192,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        message_content = message.content[0].text  # Extracts the actual message text
+        input_tokens = message.usage.input_tokens  # Extracts input tokens
+        output_tokens = message.usage.output_tokens  # Extracts output tokens
+
+    except Exception as e:
+        message_content = f"API ERROR: Anthropic API failed"
+        input_tokens = 0
+        output_tokens = 0
+
+    return message_content, input_tokens, output_tokens
 
 def gemini_api(model, prompt):
 
@@ -41,7 +69,6 @@ def gemini_api(model, prompt):
 
     return reponse_message, input_tokens, output_tokens
 
-
 def mistral_api(model, prompt):
     client = Mistral(api_key=os.getenv("MISTRAL"))
 
@@ -60,4 +87,6 @@ def mistral_api(model, prompt):
     reponse_message = chat_response.choices[0].message.content
 
     return reponse_message, input_tokens, output_tokens
+
+
 
