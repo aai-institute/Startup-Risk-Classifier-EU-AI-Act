@@ -18,10 +18,10 @@ python main.py search --input-file sample_urls.csv --output-file search_results.
 - `--input-file, -i`: Input CSV file with URLs column (required)
 - `--output-file, -o`: Output CSV file for results (required)
 
-**Note:** The search model is hardcoded to use `claude-3-7-sonnet-20250219` for consistency.
+**Note:** The search model is hardcoded to use `claude-sonnet-4-20250514` for consistency.
 
 **Input CSV Format:**
-The CSV file should have columns named "Company Name" and "URLs" (or "URL"):
+The CSV file should have columns named "Company Name" and "URLs":
 
 ```csv
 Company Name,URLs
@@ -31,7 +31,7 @@ Google AI,https://ai.google
 ```
 
 **Output CSV Format:**
-The output file will have the same structure as the classification input format:
+The output file will have the following structure:
 
 ```csv
 Company Name,Use Case Name,Use Case Description
@@ -41,13 +41,13 @@ OpenAI,ChatGPT,ChatGPT is a conversational AI assistant...
 ```
 
 **Key Features:**
-- Automatically separates multiple use cases found on each website
+- Automatically separates multiple use cases found for each company
 - Creates multiple rows for each company if multiple use cases are found
-- Output format matches the input format expected by the classify command
+- Output format matches the input format expected by the `classify` command
 - Extracts company name from URL if not provided in input file
 
 ### Classify Command
-Classify AI use cases from a CSV file using selected AI models:
+Classify AI use cases from a CSV file:
 
 ```bash
 python main.py classify --input-file sample_use_cases.csv --output-file classification_results.csv
@@ -60,7 +60,7 @@ python main.py classify --input-file sample_use_cases.csv --output-file classifi
 
 **Model Selection Examples:**
 ```bash
-# Use all 5 models (default)
+# Use Claude Sonnet 4 (default)
 python main.py classify -i input.csv -o output.csv
 
 # Use only ChatGPT and Claude
@@ -71,7 +71,7 @@ python main.py classify -i input.csv -o output.csv -m chatgpt claude gemini
 ```
 
 **Input CSV Format:**
-The CSV file should have the following columns:
+The CSV file should have the following columns. They are the same as created by the `search` command.
 - `Company Name`: Name of the company
 - `Use Case Name`: Name of the AI use case
 - `Use Case Description`: Detailed description of the AI use case
@@ -92,18 +92,18 @@ The output CSV will contain:
 - `Reason`: Detailed reasoning for the classification
 - `Model Distribution`: How each model voted
 - `Chosen Model`: Which model's reasoning was selected
-- `Token Cost ($)`: Cost of the classification
+- `Token Cost ($)`: API cost of the classification
 
 ## EU AI Act Risk Classifications
 
 The tool classifies AI systems into these categories:
-- `Prohibited AI system`: Banned under EU AI Act
-- `High-risk AI system under Annex I`: High-risk systems in Annex I areas
-- `High-risk AI system under Annex III`: High-risk systems in Annex III areas
-- `High-risk AI system with transparency obligations`: High-risk with transparency requirements
-- `System with transparency obligations`: Systems requiring transparency
-- `Low-risk AI system`: Low-risk systems
-- `Uncertain`: Unable to determine classification
+- `Prohibited AI system`
+- `High-risk AI system under Annex I`
+- `High-risk AI system under Annex III`
+- `High-risk AI system with transparency obligations`
+- `System with transparency obligations`
+- `Low-risk AI system`
+- `Uncertain`
 
 ## Sample Files
 
