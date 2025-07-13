@@ -50,7 +50,7 @@ OpenAI,ChatGPT,ChatGPT is a conversational AI assistant...
 Classify AI use cases from a CSV file:
 
 ```bash
-python main.py classify --input-file sample_use_cases.csv --output-file classification_results.csv
+python main.py classify --input-file use_cases.csv --output-file classifications.csv
 ```
 
 **Options:**
@@ -61,17 +61,17 @@ python main.py classify --input-file sample_use_cases.csv --output-file classifi
 **Model Selection Examples:**
 ```bash
 # Use Claude Sonnet 4 (default)
-python main.py classify -i input.csv -o output.csv
+python main.py classify -i use_cases.csv -o classifications.csv
 
-# Use only ChatGPT and Claude
-python main.py classify -i input.csv -o output.csv --models chatgpt claude
+# Use Model Ensembling
+python main.py classify -i use_cases.csv -o classifications.csv --models chatgpt claude gemini
 
-# Use only 3 models
-python main.py classify -i input.csv -o output.csv -m chatgpt claude gemini
+# Use All Available Models
+python main.py classify -i use_cases.csv -o classifications.csv -m chatgpt, claude, deepseek, gemini, mistral
 ```
 
 **Input CSV Format:**
-The CSV file should have the following columns. They are the same as created by the `search` command.
+The CSV file should have the following columns. They are the same as created by the `search` command earlier.
 - `Company Name`: Name of the company
 - `Use Case Name`: Name of the AI use case
 - `Use Case Description`: Detailed description of the AI use case
@@ -79,8 +79,9 @@ The CSV file should have the following columns. They are the same as created by 
 Example:
 ```csv
 Company Name,Use Case Name,Use Case Description
-TechCorp,AI Chatbot,Customer service chatbot that automatically responds to customer inquiries
-DataInc,Predictive Analytics,Machine learning system that analyzes customer behavior patterns
+OpenAI,GPT-4,GPT-4 is a large multimodal model...
+OpenAI,DALL-E 3,DALL-E 3 is an image generation model...
+OpenAI,ChatGPT,ChatGPT is a conversational AI assistant...
 ```
 
 **Output CSV Format:**
@@ -115,55 +116,28 @@ Anthropic,https://anthropic.com
 Google AI,https://ai.google
 ```
 
-### Sample CSV file for classification (sample_use_cases.csv)
-```csv
-Company Name,Use Case Name,Use Case Description
-TechCorp,AI Chatbot,Customer service chatbot that automatically responds to customer inquiries and escalates complex issues to human agents
-DataInc,Predictive Analytics,Machine learning system that analyzes customer behavior to predict purchasing patterns and recommend products
-SecureAI,Facial Recognition,Biometric authentication system that uses facial recognition to grant access to secure facilities
-```
-
 ## Environment Setup
 
 Make sure you have the following environment variables set:
-- `MY_ANTHROPIC_KEY`: Anthropic API key
-- `MY_1_KEY`: OpenAI API key
+- `ANTHROPIC_KEY`: Anthropic API key
+- `OpenAI_KEY`: OpenAI API key
 - `DEEPSEEK_KEY`: DeepSeek API key
-- `GEMINI_API_KEY`: Google Gemini API key
-- `MISTRAL_API_KEY`: Mistral API key
+- `GEMINI_KEY`: Google Gemini API key
+- `MISTRAL_KEY`: Mistral API key
 
 ## Examples
 
 ### Complete Search-to-Classification Workflow
 ```bash
 # Step 1: Search for AI use cases from websites
-python main.py search -i sample_urls.csv -o extracted_use_cases.csv
+python main.py search -i sample_urls.csv -o use_cases.csv
 
-# Step 2: Classify the extracted use cases using all models
-python main.py classify -i extracted_use_cases.csv -o final_classifications.csv
+# Step 2: Classify the extracted use cases using the default model (Claude Sonnet 4)
+python main.py classify -i use_cases.csv -o classifications.csv
 ```
 
 **Streamlined Workflow:**
 ```bash
 # One-liner workflow using CSV files
-python main.py search -i urls.csv -o use_cases.csv && python main.py classify -i use_cases.csv -o results.csv
-```
-
-### Custom Model Selection for Classification
-```bash
-# Use only ChatGPT and Claude models
-python main.py classify -i use_cases.csv -o results.csv --models chatgpt claude
-
-# Use only 3 specific models
-python main.py classify -i use_cases.csv -o results.csv -m chatgpt deepseek gemini
-
-# Use all models (default behavior)
-python main.py classify -i use_cases.csv -o results.csv
-```
-
-### Quick Testing
-```bash
-# Test with sample files
-python main.py search -i sample_urls.csv -o test_search_results.csv
-python main.py classify -i sample_use_cases.csv -o test_classification_results.csv --models chatgpt claude
+python main.py search -i sample_urls.csv -o use_cases.csv && python main.py classify -i use_cases.csv -o classifications.csv
 ```
